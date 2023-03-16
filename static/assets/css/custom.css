@@ -1,0 +1,16 @@
+/**
+ *
+ * You can write your CSS code here, DO NOT touch the default JavaScript file
+ * because it will make it harder for you to update.
+ * 
+ */
+
+/*# sourceMappingURL=custom.css.map */
+
+.feedback-login{
+    text-align: center;
+    font-size: 12px;
+    line-height: 20px;
+    color: red;
+    font-weight: bold;
+}

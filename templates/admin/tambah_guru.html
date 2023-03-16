@@ -1,0 +1,91 @@
+{% set title = 'Admin - Tambah Guru SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
+<
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Admin</li>
+          <li class="nav-item dropdown">
+              <a href="/dashboard_admin" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+          <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Guru</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_guru">Lihat data guru</a>
+                  </li>
+                  <li class="active">
+                      <a class="nav-link" href="/dashboard_admin/tambah_guru">Tambah guru</a>
+                  </li>
+              </ul>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Siswa</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_siswa">Lihat data siswa</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_siswa">Tambah siswa</a>
+                  </li>
+              </ul>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-columns"></i><span>Data Kelas</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_kelas">Data Kelas</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_kelas">Tambah Kelas</a>
+                  </li>
+              </ul>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-file-alt"></i><span>Data Jadwal</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_jadwal">Data Jadwal</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_jadwal">Tambah Jadwal</a>
+                  </li>
+              </ul>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Tambah Guru</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin/data_guru">Data Guru</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Tambah Guru
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <h4 class="text-dark" style="text-align: center">Ini tambah guru, belum diisi</h4>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}
