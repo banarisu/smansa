@@ -80,6 +80,23 @@
                   </div>
               </div>
               <div class="section-body">
+                  {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                    {% if status is true %}
+                    <div class="alert alert-success">
+                      {% for message in messages %}
+                        {{ message }}
+                      {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                      {% for message in messages %}
+                        {{ message }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endwith %}
                   <form class="form-inline mr-auto" style="margin: 10px" method="POST">
                       <div class="search-element">
                           <input class="form-control" type="text" name="search" placeholder="Cari nama di sini" data-width="250" style="width: 250px;">
@@ -102,10 +119,9 @@
                           </tr>
                       </thead>
                       <tbody>
-                      <!-- Jika tabel guru tidak kosong, maka tampilkan -->
+                      <!-- Jika tabel guru tidak kosong, maka tampilkan... -->
                       {% if guru is not false %}
                       <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
-
                       {% for data in guru %}
                           <tr>
                               {% set x = count+loop.index %}
@@ -118,7 +134,7 @@
                               <td>{{ data[5] }}</td>
                               <td>
                                   <div class="btn-group mb-3" role="group">
-                                      <a href="#" class="btn btn-icon btn-warning">
+                                      <a href="/dashboard_admin/edit_guru/{{data[0]}}" class="btn btn-icon btn-warning">
                                           <i class="far fa-edit"></i>
                                       </a>
                                       <a href="#" class="btn btn-icon btn-danger">
@@ -128,7 +144,7 @@
                               </td>
                           </tr>
                       {% endfor %}
-                      <!-- Jika tabel guru kosong -->
+                      <!-- Namun jika tabel guru kosong -->
                       {% else %}
                           <tr>
                               <td colspan="8">Data tidak ditemukan</td>

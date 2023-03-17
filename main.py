@@ -13,6 +13,10 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 conn = cursor = None
+
+# Deklarasi variabel global untuk diakses beberapa function
+editStat = True
+
 #Akses database
 def openDb():
     global conn, cursor
@@ -123,13 +127,15 @@ def dataguru(page):
         cursor.execute(sql2)
         lanjut = cursor.fetchall()
 
-        # Jika user melakukan searching
         if request.method == 'POST':
+            # Jika user melakukan searching
             if request.form['search']:
                 sql = "SELECT * FROM guru WHERE nama LIKE '%" + request.form['search'] + "%' ORDER BY nama limit " + str(fp) + ", " + str(perPage)
                 cursor.execute(sql)
                 guru = cursor.fetchall()
                 lanjut=False
+            elif request.form['edit']:
+                print(request.form['edit'])
 
         # Jika databasenya kosong
         if not guru:
@@ -139,10 +145,53 @@ def dataguru(page):
         if not lanjut:
             lanjut = False
 
-        return render_template('admin/data_guru.html', count=fp, guru=guru, prev=prev, next=next, lanjut=lanjut)
+        return render_template('admin/data_guru.html', count=fp, guru=guru, prev=prev, next=next, lanjut=lanjut, status=editStat)
     else:
         return redirect(url_for('index'))
 
+@app.route('/dashboard_admin/edit_guru/<id>', methods = ['GET', 'POST'])
+def editguru(id):
+    if verifLogin(1):
+        openDb()
+        global editStat
+        cursor.execute('SELECT * FROM guru WHERE nuptk = %s', (id))
+        data = cursor.fetchone()
+
+        # Ambil list agama untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT * FROM agama')
+        agam = cursor.fetchall()
+
+        # Variabel dummy untuk menguji jika gender = P maka defaultnya checked di P
+        gend = "P"
+
+        # Jika user menekan tombol submit, maka mengumpulkan semua data yang ada di form
+        if request.method == 'POST':
+            try:
+                nuptk = request.form['nuptk']
+                nama = request.form['nama']
+                jk = request.form['gender']
+                agama = request.form['aga']
+                email = request.form['email']
+                telp = request.form['tel']
+                detail = (nama, jk, agama, email, telp, nuptk)
+                print(detail)
+                cursor.execute(
+                    'UPDATE guru SET nama = %s, jeniskelamin = %s, agama = %s, email = %s, telepon = %s WHERE nuptk = %s',
+                    detail)
+                conn.commit()
+                editStat = True
+                flash('Data berhasil diubah')
+                closeDb()
+            except Exception as err:
+                editStat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('dataguru'))
+
+        closeDb()
+        return render_template('admin/edit_guru.html', data=data, ag=agam, gend=gend)
+    else:
+        return redirect(url_for('index'))
 @app.route('/dashboard_admin/tambah_guru', methods = ['GET', 'POST'])
 def tambahguru():
     if verifLogin(1):
