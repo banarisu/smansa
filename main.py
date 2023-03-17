@@ -15,7 +15,9 @@ Session(app)
 conn = cursor = None
 
 # Deklarasi variabel global untuk diakses beberapa function
-editStat = True
+Stat = True
+# Variabel dummy untuk menguji jika gender = P maka perempuan, sebaliknya laki-laki
+gend = "P"
 
 #Akses database
 def openDb():
@@ -145,7 +147,7 @@ def dataguru(page):
         if not lanjut:
             lanjut = False
 
-        return render_template('admin/data_guru.html', count=fp, guru=guru, prev=prev, next=next, lanjut=lanjut, status=editStat)
+        return render_template('admin/data_guru.html', count=fp, guru=guru, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -153,16 +155,13 @@ def dataguru(page):
 def editguru(id):
     if verifLogin(1):
         openDb()
-        global editStat
+        global Stat
         cursor.execute('SELECT * FROM guru WHERE nuptk = %s', (id))
         data = cursor.fetchone()
 
         # Ambil list agama untuk ditampilkan pada pilihan dropdown
         cursor.execute('SELECT * FROM agama')
         agam = cursor.fetchall()
-
-        # Variabel dummy untuk menguji jika gender = P maka defaultnya checked di P
-        gend = "P"
 
         # Jika user menekan tombol submit, maka mengumpulkan semua data yang ada di form
         if request.method == 'POST':
@@ -174,30 +173,56 @@ def editguru(id):
                 email = request.form['email']
                 telp = request.form['tel']
                 detail = (nama, jk, agama, email, telp, nuptk)
-                print(detail)
                 cursor.execute(
                     'UPDATE guru SET nama = %s, jeniskelamin = %s, agama = %s, email = %s, telepon = %s WHERE nuptk = %s',
                     detail)
                 conn.commit()
-                editStat = True
+                Stat = True
                 flash('Data berhasil diubah')
                 closeDb()
             except Exception as err:
-                editStat = False
+                Stat = False
                 flash('Terjadi kesalahan')
                 flash(err)
             return redirect(url_for('dataguru'))
-
         closeDb()
         return render_template('admin/edit_guru.html', data=data, ag=agam, gend=gend)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/hapus_guru/<id>', methods = ['GET', 'POST'])
+def hapusguru(id):
+    if verifLogin(1):
+        openDb()
+        global Stat
+        cursor.execute('SELECT * FROM guru WHERE nuptk = %s', (id))
+        data = cursor.fetchone()
+
+        # Jika user mengkonfirm hapusdata
+        if request.method == 'POST':
+            try:
+                cursor.execute('DELETE FROM guru WHERE nuptk = %s', (id))
+                conn.commit()
+                Stat = True
+                flash('Data berhasil dihapus')
+                #Padahal try nya berhasil, tapi di db ga kehapus njir
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('dataguru'))
+        return render_template('admin/hapus_guru.html', data=data, gend=gend)
     else:
         return redirect(url_for('index'))
 @app.route('/dashboard_admin/tambah_guru', methods = ['GET', 'POST'])
 def tambahguru():
     if verifLogin(1):
+
         return render_template('admin/tambah_guru.html')
     else:
         return redirect(url_for('index'))
+
 
 @app.route('/dashboard_admin/data_siswa', methods = ['GET', 'POST'])
 def datasiswa():
