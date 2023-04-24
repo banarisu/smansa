@@ -25,7 +25,7 @@
                       <a class="nav-link" href="/dashboard_admin/tambah_guru">Tambah guru</a>
                   </li>
                   <li class="active">
-                      <a class="nav-link" href="#">Edit data guru</a>
+                      <a class="nav-link" href="#">Edit Guru</a>
                   </li>
               </ul>
             </li>
@@ -60,6 +60,23 @@
                   <li>
                       <a class="nav-link" href="/dashboard_admin/tambah_jadwal">Tambah Jadwal</a>
                   </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_mapel">Data Mata Pelajaran</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_mapel">Tambah Mata Pelajaran</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Staf</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_staf">Data Staf</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_staf">Tambah Staf</a>
+                  </li>
               </ul>
             </li>
         </ul>
@@ -87,7 +104,7 @@
               </div>
               <div class="section-body">
                   <div class="card">
-                      <form action="url_for('editguru', id={{data[0]}})" method="post">
+                      <form action="/dashboard_admin/edit_guru/{{data[0]}}" method="post">
                           <div class="card-body">
                               <div class="form-group">
                                   <label>NUPTK</label>

@@ -1,4 +1,4 @@
-{% set title = 'Admin - Hapus Staf SMA Negeri 1 Belinyu' %}
+{% set title = 'Admin - Hapus Mata Pelajaran SMA Negeri 1 Belinyu' %}
 {% extends "master/base.html" %}
 <
 {% block sidebar %}
@@ -48,7 +48,7 @@
                   </li>
               </ul>
             </li>
-          <li class="nav-item dropdown">
+          <li class="nav-item dropdown active">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-file-alt"></i><span>Data Jadwal</span></a>
               <ul class="dropdown-menu">
                   <li>
@@ -57,15 +57,18 @@
                   <li>
                       <a class="nav-link" href="/dashboard_admin/tambah_jadwal">Tambah Jadwal</a>
                   </li>
-                <li>
+                  <li>
                       <a class="nav-link" href="/dashboard_admin/data_mapel">Data Mata Pelajaran</a>
                   </li>
                   <li>
                       <a class="nav-link" href="/dashboard_admin/tambah_mapel">Tambah Mata Pelajaran</a>
                   </li>
+                  <li class="active">
+                      <a class="nav-link" href="#">Hapus Mata Pelajaran</a>
+                  </li>
               </ul>
             </li>
-          <li class="nav-item dropdown active">
+            <li class="nav-item dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Staf</span></a>
               <ul class="dropdown-menu">
                   <li>
@@ -73,9 +76,6 @@
                   </li>
                   <li>
                       <a class="nav-link" href="/dashboard_admin/tambah_staf">Tambah Staf</a>
-                  </li>
-                <li class="active">
-                      <a class="nav-link" href="#">Hapus Staf</a>
                   </li>
               </ul>
             </li>
@@ -89,56 +89,40 @@
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1>Hapus Staf</h1>
+                  <h1>Hapus Mata Pelajaran</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
                           <a href="/dashboard_admin">Dashboard</a>
                       </div>
                       <div class="breadcrumb-item">
-                          <a href="/dashboard_admin/data_staf">Data Staf</a>
+                          <a href="/dashboard_admin/data_mapel">Data Mapel</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Hapus Staf
+                          Hapus Mapel
                       </div>
                   </div>
               </div>
               <div class="section-body">
                   <div class="card mx-auto" style="width: 50%">
-                      <form action="/dashboard_admin/hapus_staf/{{data[0]}}" method="post">
+                      <form action="/dashboard_admin/hapus_mapel/{{data[0]}}" method="post">
                           <div class="col-12">
                               <div class="card-body display-hapus">
-                              <div class="form-group">
-                                  <label>ID</label>
-                                  <p class="card-text">
-                                      {{data[0]}}
-                                  </p>
+                                  <div class="form-group">
+                                      <label>Kode Mapel</label>
+                                      <p class="card-text">{{data[0]}}</p>
+                                  </div>
+                                  <div class="form-group">
+                                      <label>Nama Mapel</label>
+                                      <p class="card-text">{{data[1]}}</p>
+                                  </div>
                               </div>
-                              <div class="form-group">
-                                  <label>Username</label>
-                                  <p class="card-text">
-                                      {{data[1]}}
-                                  </p>
-                              </div>
-                              <div class="form-group">
-                                  <label>Email</label>
-                                  <p class="card-text">
-                                      {{data[2]}}
-                                  </p>
-                              </div>
-                              <div class="form-group">
-                                  <label>Role</label>
-                                  <p class="card-text">
-                                      {{data[3]}}
-                                  </p>
-                              </div>
-                          </div>
                           </div>
                           <div class="card-footer text-center">
-                              <p class="card-text" style="font-weight: bold">Anda yakin ingin menghapus guru ini dari daftar staf?</p>
+                              <p class="card-text" style="font-weight: bold">Anda yakin ingin menghapus data ini?</p>
                           </div>
                           <div class="card-footer text-right">
                               <button class="btn btn-primary" type="submit">Hapus</button>
-                              <a href="/dashboard_admin/data_staf" class="btn btn-danger">Batal</a>
+                              <a href="/dashboard_admin/data_mapel" class="btn btn-danger">Batal</a>
                         </div>
                       </form>
                   </div>
