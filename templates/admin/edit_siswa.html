@@ -150,6 +150,18 @@
                                   <label>Telepon</label>
                                   <input type="tel" value="{{ data[5] }}" name="tel" class="form-control" id="telp" pattern="[0-9]+" required>
                               </div>
+                              <div class="form-group">
+                                  <label>Kelas</label>
+                                  <select class="form-control" name="kls" id="kelas">
+                                  {% for x in kls %}
+                                    {% if data[6] == x[0] %}
+                                        <option selected value="{{ x[0] }}">{{ x[1] }}</option>
+                                    {% else %}
+                                        <option value="{{ x[0] }}">{{ x[1] }}</option>
+                                    {% endif %}
+                                  {% endfor %}
+                                  </select>
+                              </div>
                           </div>
                           <div class="card-footer text-right">
                               <button class="btn btn-primary" type="submit">Edit</button>

@@ -180,14 +180,14 @@ def admin():
         res = cursor.fetchone()
         numKelas = res[0]
 
-        # Fetch jumlah mapel
-        sql = "SELECT COUNT(*) FROM mapel"
+        # Fetch jumlah staf
+        sql = "SELECT COUNT(*) FROM user WHERE username NOT IN('admin') AND access = 1 OR access = 4"
         cursor.execute(sql)
         res = cursor.fetchone()
-        numMapel = res[0]
+        numStaf = res[0]
 
         closeDb()
-        return render_template('admin/dashboard_admin.html', guru=numGuru, siswa=numSiswa, hari=numHari, tanggal=dt, kelas=numKelas, mapel=numMapel)
+        return render_template('admin/dashboard_admin.html', guru=numGuru, siswa=numSiswa, hari=numHari, tanggal=dt, kelas=numKelas, staf=numStaf)
     else:
         return redirect(url_for('index'))
 
@@ -316,20 +316,20 @@ def datasiswa(page):
         firstPage = page * perPage
         fp = firstPage - 10
         # Ambil daftar siswa dari database
-        sql = "SELECT * FROM siswa ORDER BY nama limit " + str(fp) + ", " + str(perPage)
+        sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
         cursor.execute(sql)
         siswa = cursor.fetchall()
 
         # Cek jika halaman selanjutnya masih ada data atau tidak
-        sql2 = "SELECT * FROM siswa limit " + str(firstPage) + ", " + str(perPage)
+        sql2 = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas ORDER BY s.nama limit " + str(firstPage) + ", " + str(perPage)
         cursor.execute(sql2)
         lanjut = cursor.fetchall()
 
         if request.method == 'POST':
             # Jika user melakukan searching
             if request.form['search']:
-                sql = "SELECT * FROM siswa WHERE nama LIKE '%" + request.form[
-                    'search'] + "%' ORDER BY nama limit " + str(fp) + ", " + str(perPage)
+                sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas WHERE s.nama LIKE '%" + request.form[
+                    'search'] + "%' ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
                 cursor.execute(sql)
                 siswa = cursor.fetchall()
                 lanjut = False
@@ -351,12 +351,18 @@ def editsiswa(id):
         openDb()
         # Status berhasil & error
         global Stat
-        cursor.execute('SELECT * FROM siswa WHERE nis = %s', (id))
+        # Ambil data siswa yang akan diedit
+        sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.kelas, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas WHERE s.nis = %s"
+        cursor.execute(sql, id)
         data = cursor.fetchone()
 
         # Ambil list agama untuk ditampilkan pada pilihan dropdown
         cursor.execute('SELECT * FROM agama')
         agam = cursor.fetchall()
+
+        # Ambil list kelas untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT kelas, namakelas FROM kelas')
+        kls = cursor.fetchall()
 
         # Jika user menekan tombol submit, maka mengumpulkan semua data yang ada di form
         if request.method == 'POST':
@@ -367,21 +373,24 @@ def editsiswa(id):
                 agama = request.form['aga']
                 email = request.form['email']
                 telp = request.form['tel']
+                kelas = request.form.get('kls')
                 detail = (nama, jk, agama, email, telp, nis)
+                detail2 = (kelas, nis)
                 cursor.execute(
                     'UPDATE siswa SET nama = %s, jeniskelamin = %s, agama = %s, email = %s, telepon = %s WHERE nis = %s',
                     detail)
                 conn.commit()
+                cursor.execute('UPDATE rombel SET kelas = %s WHERE anggota = %s', detail2)
+                conn.commit()
                 Stat = True
                 flash('Data berhasil diubah')
-                closeDb()
             except Exception as err:
                 Stat = False
                 flash('Terjadi kesalahan')
                 flash(err)
+            closeDb()
             return redirect(url_for('datasiswa'))
-        closeDb()
-        return render_template('admin/edit_siswa.html', data=data, ag=agam, gend=gend)
+        return render_template('admin/edit_siswa.html', data=data, ag=agam, kls=kls, gend=gend)
     else:
         return redirect(url_for('index'))
 
@@ -390,13 +399,17 @@ def hapussiswa(id):
     if verifLogin(1):
         openDb()
         global Stat
-        cursor.execute('SELECT * FROM siswa WHERE nis = %s', (id))
+        # Ambil data siswa yang akan dihapus
+        sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.kelas, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas WHERE s.nis = %s"
+        cursor.execute(sql, id)
         data = cursor.fetchone()
 
         # Jika user mengkonfirm hapusdata
         if request.method == 'POST':
             try:
                 cursor.execute('DELETE FROM siswa WHERE nis = %s', (id))
+                conn.commit()
+                cursor.execute('DELETE FROM rombel WHERE anggota = %s', (id))
                 conn.commit()
                 Stat = True
                 flash('Data berhasil dihapus')
@@ -406,7 +419,6 @@ def hapussiswa(id):
                 flash(err)
             closeDb()
             return redirect(url_for('datasiswa'))
-        closeDb()
         return render_template('admin/hapus_siswa.html', data=data, gend=gend)
     else:
         return redirect(url_for('index'))
@@ -428,14 +440,13 @@ def datakelas(page):
         next = page + 1
         firstPage = page * perPage
         fp = firstPage - 10
-        # Ambil daftar kelas dan nama wali kelas dari database
-        sql = "SELECT k.kelas, k.namakelas, g.nama FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk ORDER BY k.kelas limit " + str(fp) + ", " + str(perPage)
+        # Ambil daftar kelas, nama wali kelas, dan jumlah siswa dari database
+        sql = "SELECT k.kelas, k.namakelas, g.nama, COUNT(r.anggota) FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk LEFT JOIN rombel r ON k.kelas = r.kelas GROUP BY k.kelas ORDER BY k.kelas ASC limit " + str(fp) + ", " + str(perPage)
         cursor.execute(sql)
         kelas = cursor.fetchall()
 
         # Ambil data halaman selanjutnya
-        sql2 = "SELECT k.kelas, k.namakelas, g.nama FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk ORDER BY k.kelas limit " + str(
-            firstPage) + ", " + str(perPage)
+        sql2 = "SELECT k.kelas, k.namakelas, g.nama, COUNT(r.anggota) FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk LEFT JOIN rombel r ON k.kelas = r.kelas GROUP BY k.kelas ORDER BY k.kelas ASC limit " + str(firstPage) + ", " + str(perPage)
         cursor.execute(sql2)
         lanjut = cursor.fetchall()
 
@@ -485,13 +496,12 @@ def editkelas(kode):
                 conn.commit()
                 Stat = True
                 flash('Data berhasil diubah')
-                closeDb()
             except Exception as err:
                 Stat = False
                 flash('Terjadi kesalahan')
                 flash(err)
+            closeDb()
             return redirect(url_for('datakelas'))
-        closeDb()
         return render_template('admin/edit_kelas.html', data=data, wali=wali)
     else:
         return redirect(url_for('index'))
@@ -509,6 +519,8 @@ def hapuskelas(kode):
             try:
                 cursor.execute('DELETE FROM kelas WHERE kelas = %s', (kode))
                 conn.commit()
+                '''cursor.execute('DELETE FROM rombel WHERE kelas = %s', (kode))
+                conn.commit()'''
                 Stat = True
                 flash('Data berhasil dihapus')
             except Exception as err:
@@ -517,7 +529,6 @@ def hapuskelas(kode):
                 flash(err)
             closeDb()
             return redirect(url_for('datakelas'))
-        closeDb()
         return render_template('admin/hapus_kelas.html', data=kelas)
     else:
         return redirect(url_for('index'))
@@ -525,24 +536,159 @@ def hapuskelas(kode):
 @app.route('/dashboard_admin/tambah_kelas', methods = ['GET', 'POST'])
 def tambahkelas():
     if verifLogin(1):
-        return render_template('admin/tambah_kelas.html')
+        openDb()
+        # Status berhasil & error
+        global Stat
+        # Ambil list guru yang belum menjabat sebagai wali kelas untuk ditampilkan pada pilihan dropdown
+        cursor.execute(
+            'SELECT nuptk, nama FROM guru WHERE NOT EXISTS (SELECT walikelas FROM kelas WHERE guru.nuptk = kelas.walikelas)')
+        wali = cursor.fetchall()
+        if request.method == 'POST':
+            try:
+                namakelas = request.form['kelas']
+                kodekelas = namakelas.replace(" ", "_")
+                walikelas = request.form.get('wali')
+                detail = (kodekelas, namakelas, walikelas)
+                cursor.execute('INSERT INTO kelas VALUES (%s, %s, %s)', detail)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('datakelas'))
+        return render_template('admin/tambah_kelas.html', wali=wali)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/data_rombel/<kode>', methods = ['GET', 'POST'], defaults={'page':1})
+@app.route('/dashboard_admin/data_rombel/<kode>/<int:page>', methods = ['GET', 'POST'])
+def datarombel(kode, page):
+    if verifLogin(1):
+        openDb()
+        perPage = 10
+        prev = page - 1
+        next = page + 1
+        firstPage = page * perPage
+        fp = firstPage - 10
+        # Ambil daftar siswa kelas tersebut dari database
+        sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
+        cursor.execute(sql, kode)
+        rombel = cursor.fetchall()
+
+        # Ambil nama kelas dari kode kelas
+        sql = "SELECT namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kode)
+        kelas = cursor.fetchone()
+
+        # Cek jika halaman selanjutnya masih ada data atau tidak
+        sql2 = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s ORDER BY s.nama limit " + str(firstPage) + ", " + str(perPage)
+        cursor.execute(sql2, kode)
+        lanjut = cursor.fetchall()
+
+        if request.method == 'POST':
+            # Jika user melakukan searching
+            if request.form['search']:
+                sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s AND s.nama LIKE '%" + request.form[
+                    'search'] + "%' ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
+                cursor.execute(sql, kode)
+                rombel = cursor.fetchall()
+                lanjut = False
+
+        # Jika databasenya kosong
+        if not rombel:
+            rombel = False
+
+        # Jika halaman selanjutnya kosong
+        if not lanjut:
+            lanjut = False
+        return render_template('admin/data_rombel.html', kode=kode, kelas=kelas[0], count=fp, rombel=rombel, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
 @app.route('/dashboard_admin/data_jadwal', methods = ['GET', 'POST'])
 def datajadwal():
     if verifLogin(1):
-        return render_template('admin/data_jadwal.html')
+        openDb()
+        # Ambil daftar kelas dari database
+        sql = "SELECT kelas, namakelas FROM kelas ORDER BY namakelas"
+        cursor.execute(sql)
+        listKelas = cursor.fetchall()
+        closeDb()
+        return render_template('admin/data_jadwal.html', kelas=listKelas)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/jadwal/<kode>', methods = ['GET', 'POST'], defaults={'hari':"Senin"})
+@app.route('/dashboard_admin/jadwal/<kode>/<string:hari>', methods = ['GET', 'POST'])
+def jadwal(kode, hari):
+    if verifLogin(1):
+        openDb()
+        # Ambil nama kelas dari kode kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kode)
+        kelas = cursor.fetchone()
+
+        # Ambil data jadwal menurut kelas yang dipilih
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
+        detail=(kode, hari)
+        cursor.execute(sql, detail)
+        jadwal = cursor.fetchall()
+
+        # Ambil daftar hari belajar
+        sql = "SELECT * FROM haribelajar ORDER BY hari DESC"
+        cursor.execute(sql)
+        listHari = cursor.fetchall()
+
+        # Jika jadwal kelas tersebut kosong
+        if not jadwal:
+            jadwal = False;
+        closeDb()
+        return render_template('admin/detail_jadwal.html', kode=kode, hari=hari, kelas=kelas, jadwal=jadwal, listHari=listHari)
     else:
         return redirect(url_for('index'))
 
 @app.route('/dashboard_admin/tambah_jadwal', methods = ['GET', 'POST'])
 def tambahjadwal():
     if verifLogin(1):
-        return render_template('admin/tambah_jadwal.html')
+        openDb()
+        # Ambil daftar kelas
+        sql = "SELECT kelas, namakelas FROM kelas ORDER BY namakelas DESC"
+        cursor.execute(sql)
+        kls = cursor.fetchall()
+
+        # Ambil daftar hari belajar
+        sql = "SELECT * FROM haribelajar ORDER BY hari DESC"
+        cursor.execute(sql)
+        days = cursor.fetchall()
+
+        if request.method == 'POST':
+            try:
+                Stat = True
+                kode = request.form.get('kelas')
+                hari = request.form.get('hari')
+                return(redirect(url_for('addjadwal', kode=kode, hari=hari)))
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('tambahjadwal'))
+        return render_template('admin/tambah_jadwal.html', kls=kls, days=days)
     else:
         return redirect(url_for('index'))
 
+@app.route('/dashboard_admin/jadwal_baru/<kode>/<hari>', methods = ['GET', 'POST'])
+def addjadwal(kode, hari):
+    if verifLogin(1):
+        openDb()
+
+        closeDb()
+        return render_template('admin/jadwal_baru.html', kode=kode, hari=hari)
+    else:
+        return redirect(url_for('index'))
 @app.route('/dashboard_admin/data_mapel', methods = ['GET', 'POST'], defaults={'page':1})
 @app.route('/dashboard_admin/data_mapel/<int:page>', methods = ['GET', 'POST'])
 def datamapel(page):
@@ -645,6 +791,24 @@ def hapusmapel(kode):
 @app.route('/dashboard_admin/tambah_mapel', methods = ['GET', 'POST'])
 def tambahmapel():
     if verifLogin(1):
+        openDb()
+        # Status berhasil & error
+        global Stat
+        if request.method == 'POST':
+            try:
+                kodemapel = request.form['kodemapel']
+                namamapel = request.form['namamapel']
+                detail = (kodemapel, namamapel)
+                cursor.execute('INSERT INTO mapel VALUES (%s, %s)', detail)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('datamapel'))
         return render_template('admin/tambah_mapel.html')
     else:
         return redirect(url_for('index'))
@@ -653,8 +817,8 @@ def tambahmapel():
 def datastaf():
     if verifLogin(1):
         openDb()
-        # Ambil daftar staf dari database, left join dengan nama hak akses
-        sql = "SELECT u.userid, u.username, u.email, h.accessname FROM user u LEFT JOIN hakakses h ON u.access = h.accessid WHERE u.username NOT IN('admin') AND u.access = 1 OR u.access = 4"
+        # Ambil daftar staf dari database, left join dengan nama hak akses & nama guru
+        sql = "SELECT u.userid, g.nama, u.email, h.accessname FROM user u LEFT JOIN hakakses h ON u.access = h.accessid LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.username NOT IN('admin') AND u.access = 1 OR u.access = 4"
         cursor.execute(sql)
         staf = cursor.fetchall()
         # Jika data staf kosong
@@ -672,7 +836,7 @@ def editstaf(id):
         global Stat
 
         # Ambil data yang akan diedit
-        cursor.execute('SELECT u.userid, u.username, u.email, h.accessname FROM user u LEFT JOIN hakakses h ON u.access = h.accessid WHERE u.userid = %s', (id))
+        cursor.execute('SELECT u.userid, g.nama, u.email FROM user u LEFT JOIN hakakses h ON u.access = h.accessid LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.userid = %s', (id))
         data = cursor.fetchone()
 
         # Ambil list hak akses untuk ditampilkan pada pilihan dropdown
@@ -711,7 +875,7 @@ def hapusstaf(id):
         # Status berhasil & error
         global Stat
         # Ambil data dari staf yang dipilih untuk dihapus
-        cursor.execute('SELECT u.userid, u.username, u.email, h.accessname FROM user u LEFT JOIN hakakses h ON u.access = h.accessid WHERE u.userid = %s',(id))
+        cursor.execute('SELECT u.userid, g.nama, u.email, h.accessname FROM user u LEFT JOIN hakakses h ON u.access = h.accessid LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.userid = %s',(id))
         data = cursor.fetchone()
 
         # Jika user mengkonfirm hapusdata
@@ -734,13 +898,88 @@ def hapusstaf(id):
     else:
         return redirect(url_for('index'))
 
-@app.route('/dashboard_admin/tambah_staf', methods = ['GET', 'POST'])
-def tambahStaf():
+@app.route('/dashboard_admin/tambah_staf', methods = ['GET', 'POST'], defaults={'page':1})
+@app.route('/dashboard_admin/tambah_staf/<int:page>', methods = ['GET', 'POST'])
+def tambahStaf(page):
     if verifLogin(1):
-        return render_template('admin/tambah_staf.html')
+        openDb()
+        perPage = 10
+        prev = page - 1
+        next = page + 1
+        firstPage = page * perPage
+        fp = firstPage - 10
+        # Ambil daftar guru dari database yang bukan staf admin/perpus
+        sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 ORDER BY nama limit " + str(fp) + ", " + str(perPage)
+        cursor.execute(sql)
+        staf = cursor.fetchall()
+
+        # Ambil data halaman selanjutnya
+        sql2 = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 ORDER BY nama limit " + str(firstPage) + ", " + str(perPage)
+        cursor.execute(sql2)
+        lanjut = cursor.fetchall()
+
+        if request.method == 'POST':
+            # Jika user melakukan searching
+            if request.form['search']:
+                # Searching dengan mencocokkan nama guru
+                sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 AND g.nama LIKE '%" + request.form[
+                    'search'] + "%' ORDER BY nama limit " + str(
+                    fp) + ", " + str(perPage)
+                cursor.execute(sql)
+                staf = cursor.fetchall()
+                # Jika melakukan searching, disable pagination
+                lanjut = False
+
+        # Jika databasenya kosong
+        if not staf:
+            staf = False
+
+        # Jika halaman selanjutnya kosong
+        if not lanjut:
+            lanjut = False
+        closeDb()
+        return render_template('admin/tambah_staf.html', count=fp, staf=staf, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
+@app.route('/dashboard_admin/konfirm_staf/<id>', methods = ['GET', 'POST'])
+def addStaf(id):
+    if verifLogin(1):
+        openDb()
+        # Status berhasil & error
+        global Stat
+        # Ambil list hak akses untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT accessname FROM hakakses WHERE accessid = 1 OR accessid = 4')
+        role = cursor.fetchall()
+
+        # Ambil data yang akan ditambahkan
+        cursor.execute(
+            'SELECT u.userid, g.nama, u.email FROM user u LEFT JOIN hakakses h ON u.access = h.accessid LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.userid = %s',
+            (id))
+        data = cursor.fetchone()
+
+        if request.method == 'POST':
+            try:
+                nuptk = id
+                namarole = request.form.get('role')
+                cursor.execute('SELECT accessid FROM hakakses WHERE accessname = %s', namarole)
+                rol = cursor.fetchone()
+                info = (rol[0], nuptk)
+                # Update data user dengan role staf yang dipilih
+                cursor.execute('UPDATE user SET access = %s WHERE userid = %s', info)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+                closeDb()
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('datastaf'))
+
+        return render_template('admin/konfirm_staf.html', data=data, role=role)
+    else:
+        return redirect(url_for('index'))
 
 
 ''' Akses Guru '''

@@ -130,6 +130,7 @@
                               <th class="text-light">No</th>
                               <th class="text-light">Kelas</th>
                               <th class="text-light">Wali Kelas</th>
+                              <th class="text-light">Jumlah Siswa</th>
                               <th class="text-light">Aksi</th>
                           </tr>
                       </thead>
@@ -143,8 +144,12 @@
                               <td>{{ x }}</td>
                               <td>{{ data[1] }}</td>
                               <td>{{ data[2] }}</td>
+                              <td>{{ data[3] }}</td>
                               <td>
                                   <div class="btn-group mb-3" role="group">
+                                      <a href="/dashboard_admin/data_rombel/{{data[0]}}" class="btn btn-icon btn-info">
+                                          <i class="fas fa-info-circle"></i>
+                                      </a>
                                       <a href="/dashboard_admin/edit_kelas/{{data[0]}}" class="btn btn-icon btn-warning">
                                           <i class="far fa-edit"></i>
                                       </a>
@@ -155,10 +160,10 @@
                               </td>
                           </tr>
                       {% endfor %}
-                      <!-- Namun jika tabel guru kosong -->
+                      <!-- Namun jika tabel kelas kosong -->
                       {% else %}
                           <tr>
-                              <td colspan="4">Data tidak ditemukan</td>
+                              <td colspan="5">Data tidak ditemukan</td>
                           </tr>
                       {% endif %}
                       </tbody>

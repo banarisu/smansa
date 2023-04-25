@@ -97,26 +97,52 @@
                   </div>
               </div>
               <div class="section-body">
-                  <table class="table table-hover table-striped table-bordered text-center">
-                      <thead class="bg-primary">
-                          <tr>
-                              <th class="text-light">Kelas</th>
-                              <th class="text-light">Hari</th>
-                              <th class="text-light">Jam Belajar</th>
-                              <th class="text-light">Mata Pelajaran</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                      <!-- Ini yang akan dilooping untuk memunculkan data dalam tabel-->
-                          <tr>
-                              <td>X IPS 1</td>
-                              <td>Senin</td>
-                              <td>07.00-08.20</td>
-                              <td>Bahasa Indonesia</td>
-                          </tr>
-                      <!-- -->
-                      </tbody>
-                  </table>
+                  {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                    {% if status is true %}
+                    <div class="alert alert-success alert-dismissible show fade">
+                        <div class="alert-body">
+                            <button class="close" data-dismiss="alert">
+                                <span>×</span>
+                            </button>
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger alert-dismissible show fade">
+                        <div class="alert-body">
+                            <button class="close" data-dismiss="alert">
+                                <span>×</span>
+                            </button>
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endwith %}
+                  <div class="card mx-auto" style="width: 80%">
+                      <div class="card-body">
+                          <ul class="nav flex-column">
+                              <h5>Daftar Kelas</h5>
+                              <!-- Jika daftar kelas tidak kosong, maka tampilkan... -->
+                              {% if kelas is not false %}
+                              <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                              {% for data in kelas %}
+                              <li class="nav-item">
+                                  <a class="nav-link" href="/dashboard_admin/jadwal/{{ data[0] }}">• {{ data[1] }}</a>
+                              </li>
+                              {% endfor %}
+                              <!-- Namun jika daftar kelas kosong -->
+                              {% else %}
+                              <h5 class="text-dark">Daftar kelas tidak ditemukan</h5>
+                              {% endif %}
+                          </ul>
+                      </div>
+                  </div>
               </div>
           </section>
       </div>
