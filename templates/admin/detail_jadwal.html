@@ -100,6 +100,33 @@
                   </div>
               </div>
               <div class="section-body">
+                  {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                    {% if status is true %}
+                    <div class="alert alert-success alert-dismissible show fade">
+                        <div class="alert-body">
+                            <button class="close" data-dismiss="alert">
+                                <span>×</span>
+                            </button>
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger alert-dismissible show fade">
+                        <div class="alert-body">
+                            <button class="close" data-dismiss="alert">
+                                <span>×</span>
+                            </button>
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endwith %}
                   <div class="dropdown d-inline mr-2">
                       <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownHari" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                           {{ hari }}
@@ -125,27 +152,28 @@
                       {% for data in jadwal %}
                           <tr>
                               <td>{{ data[0] }}-{{ data[1] }}</td>
-                              <td>{{ data[2] }}</td>
-                              <td>{{ data[3] }}</td>
+                              <td>{{ data[2] }} / {{ data[3] }}</td>
+                              <td>{{ data[4] }}</td>
                               <td>
-                                  <a href="/dashboard_admin" class="btn btn-icon btn-warning">
+                                  <a href="/dashboard_admin/edit_jadwal/{{kelas[0]}}/{{hari}}/{{data[0]}}" class="btn btn-icon btn-warning">
                                       <i class="far fa-edit"></i>
                                   </a>
-                                  <a href="/dashboard_admin" class="btn btn-icon btn-danger">
+                                  <a href="/dashboard_admin/hapus_jadwal/{{kelas[0]}}/{{hari}}/{{data[0]}}" class="btn btn-icon btn-danger">
                                       <i class="fas fa-times"></i>
+                                  </a>
                               </td>
                           </tr>
                       {% endfor %}
                       <!-- Namun jika tabel kelas kosong -->
                       {% else %}
                           <tr>
-                              <td colspan="5">Belum ada jadwal</td>
+                              <td colspan="4">Belum ada jadwal</td>
                           </tr>
                       {% endif %}
                       </tbody>
                   </table>
                   <div class="buttons mr-auto">
-                      <a href="/dashboard_admin/jadwal_baru/{{kelas[0]}}/{{hari}}" class="btn btn-icon icon-left btn-info">
+                      <a href="/dashboard_admin/jadwal_baru/{{kelas[0]}}/{{hari}}" class="btn {% if tambah == false %} disabled {% endif %} btn-icon icon-left btn-info">
                           <i class="fas fa-plus"></i>Tambah Jadwal
                       </a>
                   </div>

@@ -1,0 +1,61 @@
+{% set title = 'Perpustakaan - Dashboard SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
+
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Perpustakaan</li>
+            <li class="nav-item dropdown active">
+              <a href="/dashboard_perpus" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Buku</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus">Data Buku</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus">Tambah Buku</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Peminjaman Buku</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus">Data Peminjaman</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus">Peminjaman Baru</a>
+                  </li>
+              </ul>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Dashboard Perpustakaan</h1>
+              </div>
+              <div class="section-body">
+                  <h5 class="text-dark" style="text-align: center">{{ hari }}, {{ tanggal }}</h5>
+                  <div class="row">
+
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

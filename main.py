@@ -250,14 +250,21 @@ def editguru(id):
             try:
                 nuptk = request.form['nuptk']
                 nama = request.form['nama']
+                # Username = nama tanpa spasi ataupun simbol, hanya alphanumeric
+                username = ''.join(us for us in nama if us.isalnum()).lower()
                 jk = request.form['gender']
                 agama = request.form['aga']
                 email = request.form['email']
                 telp = request.form['tel']
                 detail = (nama, jk, agama, email, telp, nuptk)
+                detail2 = (username, email, nuptk)
+                # Update data guru
                 cursor.execute(
                     'UPDATE guru SET nama = %s, jeniskelamin = %s, agama = %s, email = %s, telepon = %s WHERE nuptk = %s',
                     detail)
+                conn.commit()
+                # Update data user guru
+                cursor.execute('UPDATE user SET username = %s, email = %s WHERE userid = %s', detail2)
                 conn.commit()
                 Stat = True
                 flash('Data berhasil diubah')
@@ -283,7 +290,11 @@ def hapusguru(id):
         # Jika user mengkonfirm hapusdata
         if request.method == 'POST':
             try:
+                # Hapus guru dari daftar guru
                 cursor.execute('DELETE FROM guru WHERE nuptk = %s', (id))
+                conn.commit()
+                # Hapus guru dari daftar user
+                cursor.execute('DELETE FROM user WHERE userid = %s', (id))
                 conn.commit()
                 Stat = True
                 flash('Data berhasil dihapus')
@@ -300,8 +311,44 @@ def hapusguru(id):
 @app.route('/dashboard_admin/tambah_guru', methods = ['GET', 'POST'])
 def tambahguru():
     if verifLogin(1):
+        openDb()
+        # Untuk masuk ke form upload guru
+        tipe="guru"
 
-        return render_template('admin/tambah_guru.html')
+        # Ambil list agama untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT * FROM agama')
+        aga = cursor.fetchall()
+
+        # Jika user mensubmit form
+        if request.method == 'POST':
+            try:
+                nuptk = request.form['nuptk']
+                nama = request.form['nama']
+                # Username = nama tanpa spasi ataupun simbol, hanya alphanumeric
+                username = ''.join(nama.split()).lower()
+                print(username)
+                jk = request.form.get('gender')
+                ag = request.form.get('agama')
+                em = request.form['email']
+                tele = request.form['tel']
+                detail = (nuptk, nama, jk, ag, em, tele)
+                detail2 = (nuptk, username, em, tele, 2)
+                # Tambahkan data ke table guru
+                cursor.execute('INSERT INTO guru VALUES (%s, %s, %s, %s, %s, %s)', detail)
+                conn.commit()
+
+                # Tambahkan data ke table user sebagai guru
+                cursor.execute('INSERT INTO user VALUES (%s, %s, %s, %s, %s)', detail2)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('dataguru'))
+        closeDb()
+        return render_template('admin/tambah_guru.html', tipe=tipe, aga=aga)
     else:
         return redirect(url_for('index'))
 
@@ -369,6 +416,8 @@ def editsiswa(id):
             try:
                 nis = request.form['nis']
                 nama = request.form['nama']
+                # Username = nama tanpa spasi ataupun simbol, hanya alphanumeric
+                username = ''.join(us for us in nama if us.isalnum()).lower()
                 jk = request.form['gender']
                 agama = request.form['aga']
                 email = request.form['email']
@@ -376,11 +425,17 @@ def editsiswa(id):
                 kelas = request.form.get('kls')
                 detail = (nama, jk, agama, email, telp, nis)
                 detail2 = (kelas, nis)
+                detail3 = (username, email, nis)
+                # Update data siswa
                 cursor.execute(
                     'UPDATE siswa SET nama = %s, jeniskelamin = %s, agama = %s, email = %s, telepon = %s WHERE nis = %s',
                     detail)
                 conn.commit()
+                # Update data kelas siswa
                 cursor.execute('UPDATE rombel SET kelas = %s WHERE anggota = %s', detail2)
+                conn.commit()
+                # Update data user siswa
+                cursor.execute('UPDATE user SET username = %s, email = %s WHERE userid = %s', detail3)
                 conn.commit()
                 Stat = True
                 flash('Data berhasil diubah')
@@ -407,9 +462,14 @@ def hapussiswa(id):
         # Jika user mengkonfirm hapusdata
         if request.method == 'POST':
             try:
+                # Hapus siswa dari daftar siswa
                 cursor.execute('DELETE FROM siswa WHERE nis = %s', (id))
                 conn.commit()
+                # Hapus siswa dari daftar rombel kelas
                 cursor.execute('DELETE FROM rombel WHERE anggota = %s', (id))
+                conn.commit()
+                # Hapus siswa dari daftar user
+                cursor.execute('DELETE FROM user WHERE userid = %s', (id))
                 conn.commit()
                 Stat = True
                 flash('Data berhasil dihapus')
@@ -426,9 +486,86 @@ def hapussiswa(id):
 @app.route('/dashboard_admin/tambah_siswa', methods = ['GET', 'POST'])
 def tambahsiswa():
     if verifLogin(1):
-        return render_template('admin/tambah_siswa.html')
+        openDb()
+        # Untuk masuk ke form upload siswa
+        tipe="siswa"
+
+        # Ambil list agama untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT * FROM agama')
+        aga = cursor.fetchall()
+
+        # Ambil list kelas untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT kelas, namakelas FROM kelas')
+        kls = cursor.fetchall()
+
+        # Jika user mensubmit form
+        if request.method == 'POST':
+            try:
+                nis = request.form['nis']
+                nama = request.form['nama']
+                # Username = nama tanpa spasi ataupun simbol, hanya alphanumeric
+                username = ''.join(us for us in nama if us.isalnum()).lower()
+                jk = request.form.get('gender')
+                ag = request.form.get('agama')
+                em = request.form['email']
+                tele = request.form['tel']
+                kelas = request.form.get('kls')
+                detail = (nis, nama, jk, ag, em, tele)
+                detail2 = (nis, username, em, tele, 3)
+                detail3 = (kelas, nis)
+                # Tambahkan data ke table siswa
+                cursor.execute('INSERT INTO siswa VALUES (%s, %s, %s, %s, %s, %s)', detail)
+                conn.commit()
+
+                # Tambahkan data ke table user sebagai siswa
+                cursor.execute('INSERT INTO user VALUES (%s, %s, %s, %s, %s)', detail2)
+                conn.commit()
+
+                # Tambahkan data siswa ke table rombel
+                cursor.execute('INSERT INTO rombel VALUES (%s, %s)', detail3)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('datasiswa'))
+        closeDb()
+        return render_template('admin/tambah_siswa.html', tipe=tipe, aga=aga, kls=kls)
     else:
         return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/upload_file/<tipe>', methods = ['GET', 'POST'])
+def formupload(tipe):
+    if verifLogin(1):
+        openDb()
+        # Klasifikasi tipe file yang diupload
+        if tipe == 'siswa':
+            siswa = True
+            guru = False
+        elif tipe == 'guru':
+            guru = True
+            siswa = False
+
+        # Jika user menekan tombol upload
+        if request.method == 'POST':
+            try:
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            if siswa:
+                return redirect(url_for('datasiswa'))
+            elif guru:
+                return redirect(url_for('dataguru'))
+        closeDb()
+        return render_template('admin/form_upload.html', siswa=siswa, guru=guru)
+    else:
+        return redirect(url_for('index'))
+
 
 @app.route('/dashboard_admin/data_kelas', methods = ['GET', 'POST'], defaults={'page':1})
 @app.route('/dashboard_admin/data_kelas/<int:page>', methods = ['GET', 'POST'])
@@ -626,14 +763,17 @@ def datajadwal():
 def jadwal(kode, hari):
     if verifLogin(1):
         openDb()
+        global Stat
+        tambah = True
         # Ambil nama kelas dari kode kelas
         sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
         cursor.execute(sql, kode)
         kelas = cursor.fetchone()
 
         # Ambil data jadwal menurut kelas yang dipilih
-        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
         detail=(kode, hari)
+        print(detail)
         cursor.execute(sql, detail)
         jadwal = cursor.fetchall()
 
@@ -645,8 +785,12 @@ def jadwal(kode, hari):
         # Jika jadwal kelas tersebut kosong
         if not jadwal:
             jadwal = False;
+
+        # Jika jadwal kelas tersebut sudah penuh
+        if len(jadwal) >= 8:
+            tambah = False
         closeDb()
-        return render_template('admin/detail_jadwal.html', kode=kode, hari=hari, kelas=kelas, jadwal=jadwal, listHari=listHari)
+        return render_template('admin/detail_jadwal.html', kode=kode, hari=hari, kelas=kelas, jadwal=jadwal, listHari=listHari, status=Stat, tambah=tambah)
     else:
         return redirect(url_for('index'))
 
@@ -654,6 +798,7 @@ def jadwal(kode, hari):
 def tambahjadwal():
     if verifLogin(1):
         openDb()
+        global Stat
         # Ambil daftar kelas
         sql = "SELECT kelas, namakelas FROM kelas ORDER BY namakelas DESC"
         cursor.execute(sql)
@@ -669,7 +814,16 @@ def tambahjadwal():
                 Stat = True
                 kode = request.form.get('kelas')
                 hari = request.form.get('hari')
-                return(redirect(url_for('addjadwal', kode=kode, hari=hari)))
+                # Cek juga jika jadwal yang ingin ditambah sudah penuh
+                sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
+                detail = (kode, hari)
+                cursor.execute(sql, detail)
+                jadwal = cursor.fetchall()
+                if len(jadwal) >= 8:
+                    Stat = False
+                    flash('Jadwal kelas ini sudah penuh dan tidak bisa ditambah')
+                    return redirect(url_for('jadwal', kode=kode, hari=hari))
+                return redirect(url_for('addjadwal', kode=kode, hari=hari))
             except Exception as err:
                 Stat = False
                 flash('Terjadi kesalahan')
@@ -684,11 +838,134 @@ def tambahjadwal():
 def addjadwal(kode, hari):
     if verifLogin(1):
         openDb()
+        global Stat
+        # Ambil detail kelas jadwal yang akan ditambah
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kode)
+        kls = cursor.fetchone()
 
-        closeDb()
-        return render_template('admin/jadwal_baru.html', kode=kode, hari=hari)
+        # Ambil daftar jam belajar dari jadwal kelas bersangkutan yang belum ada mapelnya
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute) FROM jambelajar j WHERE NOT EXISTS (SELECT w.jam FROM jadwal w WHERE j.jam = w.jam AND kelas = %s AND hari = %s)"
+        a = (kode, hari)
+        cursor.execute(sql, a)
+        jam = cursor.fetchall()
+
+        # Ambil daftar mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel ORDER BY namamapel"
+        cursor.execute(sql)
+        mapel = cursor.fetchall()
+
+        # Ambil daftar guru pengajar biasa yang bukan staf admin/perpus
+        sql = "SELECT g.nuptk, g.nama FROM guru g LEFT JOIN user u ON g.nuptk = u.userid WHERE u.access = 2"
+        cursor.execute(sql)
+        guru = cursor.fetchall()
+
+        if request.method == 'POST':
+            try:
+                jm = request.form.get('jam')
+                mp = request.form.get('mapel')
+                gr = request.form.get('guru')
+                jdwl = (kode, hari, jm, mp, gr)
+                sql = "INSERT INTO jadwal VALUES (%s, %s, %s, %s, %s)"
+                cursor.execute(sql, jdwl)
+                conn.commit()
+                Stat = True
+                flash('Jadwal berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return (redirect(url_for('jadwal', kode=kode, hari=hari)))
+        return render_template('admin/jadwal_baru.html', kelas=kls, hari=hari, jam=jam, mapel=mapel, guru=guru)
     else:
         return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/edit_jadwal/<kode>/<hari>/<jam>', methods = ['GET', 'POST'])
+def editjadwal(kode, hari, jam):
+    if verifLogin(1):
+        openDb()
+        global Stat
+        # Ambil detail kelas jadwal yang akan diedit
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kode)
+        kls = cursor.fetchone()
+
+        # Ambil detail jam berdasarkan jadwal yang akan diedit
+        sql = "SELECT jam, DATE_ADD(jam, interval 45 minute) FROM jambelajar WHERE jam = %s"
+        cursor.execute(sql, jam)
+        infojam = cursor.fetchone()
+
+        # Ambil detail jadwal yang akan diedit
+        sql = "SELECT kelas, hari, jam, mapel, pengajar FROM jadwal WHERE kelas = %s AND hari = %s AND jam = %s"
+        detail = (kode, hari, jam)
+        cursor.execute(sql, detail)
+        jdw = cursor.fetchone()
+
+        # Ambil daftar mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel ORDER BY namamapel"
+        cursor.execute(sql)
+        listmapel = cursor.fetchall()
+
+        # Ambil daftar guru pengajar biasa yang bukan staf admin/perpus
+        sql = "SELECT g.nuptk, g.nama FROM guru g LEFT JOIN user u ON g.nuptk = u.userid WHERE u.access = 2"
+        cursor.execute(sql)
+        listguru = cursor.fetchall()
+
+        if request.method == 'POST':
+            try:
+                mp = request.form.get('mapel')
+                gr = request.form.get('guru')
+                jdwl = (mp, gr, jam, kode, hari)
+                sql = "UPDATE jadwal SET mapel = %s, pengajar = %s WHERE jam = %s AND kelas = %s AND hari = %s"
+                cursor.execute(sql, jdwl)
+                conn.commit()
+                Stat = True
+                flash('Jadwal berhasil diubah')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return (redirect(url_for('jadwal', kode=kode, hari=hari)))
+        return render_template('admin/edit_jadwal.html', data=jdw, kelas=kls, hari=hari, listmapel=listmapel, listguru=listguru, jam=infojam)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/hapus_jadwal/<kode>/<hari>/<jam>', methods = ['GET', 'POST'])
+def hapusjadwal(kode, hari, jam):
+    if verifLogin(1):
+        openDb()
+        global Stat
+        # Ambil detail kelas jadwal yang akan dihapus
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kode)
+        kls = cursor.fetchone()
+
+        # Ambil detail jadwal yang akan dihapus
+        sql = "SELECT j.kelas, j.hari, j.jam, DATE_ADD(j.jam, interval 45 minute), p.namamapel, g.nama FROM jadwal j LEFT JOIN mapel p ON j.mapel = p.kodemapel LEFT JOIN guru g ON j.pengajar = g.nuptk WHERE j.kelas = %s AND j.hari = %s AND j.jam = %s"
+        detail = (kode, hari, jam)
+        cursor.execute(sql, detail)
+        jdw = cursor.fetchone()
+
+        if request.method == 'POST':
+            try:
+                jdwl = (jam, kode, hari)
+                sql = "DELETE FROM jadwal WHERE jam = %s AND kelas = %s AND hari = %s"
+                cursor.execute(sql, jdwl)
+                conn.commit()
+                Stat = True
+                flash('Jadwal berhasil dihapus')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return (redirect(url_for('jadwal', kode=kode, hari=hari)))
+        return render_template('admin/hapus_jadwal.html', data=jdw, kelas=kls)
+    else:
+        return redirect(url_for('index'))
+
 @app.route('/dashboard_admin/data_mapel', methods = ['GET', 'POST'], defaults={'page':1})
 @app.route('/dashboard_admin/data_mapel/<int:page>', methods = ['GET', 'POST'])
 def datamapel(page):

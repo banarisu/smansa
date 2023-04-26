@@ -1,10 +1,155 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% set title = 'Admin - Hapus Jadwal SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
+<
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Admin</li>
+          <li class="nav-item dropdown">
+              <a href="/dashboard_admin" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Guru</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_guru">Lihat data guru</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_guru">Tambah guru</a>
+                  </li>
+              </ul>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Siswa</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_siswa">Lihat data siswa</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_siswa">Tambah siswa</a>
+                  </li>
+              </ul>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-columns"></i><span>Data Kelas</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_kelas">Data Kelas</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_kelas">Tambah Kelas</a>
+                  </li>
+              </ul>
+            </li>
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-file-alt"></i><span>Data Jadwal</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_jadwal">Data Jadwal</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_jadwal">Tambah Jadwal</a>
+                  </li>
+                  <li class="active">
+                      <a class="nav-link" href="#">Hapus Jadwal</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_mapel">Data Mata Pelajaran</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_mapel">Tambah Mata Pelajaran</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Staf</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/data_staf">Data Staf</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_admin/tambah_staf">Tambah Staf</a>
+                  </li>
+              </ul>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
 
-</body>
-</html>
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Hapus Jadwal Kelas {{ kelas[1] }} / {{ data[1] }} / {{ data[2] }}-{{ data[3] }}</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin/jadwal/{{data[0]}}">Data Jadwal</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Hapus Jadwal
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <div class="card mx-auto" style="width: 50%">
+                      <form action="/dashboard_admin/hapus_jadwal/{{data[0]}}/{{data[1]}}/{{data[2]}}" method="post">
+                          <div class="col-12">
+                              <div class="card-body display-hapus">
+                              <div class="form-group">
+                                  <label>Kelas</label>
+                                  <p class="card-text">
+                                      {{kelas[1]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Hari Belajar</label>
+                                  <p class="card-text">
+                                      {{data[1]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Jam Belajar</label>
+                                  <p class="card-text">
+                                      {{data[2]}}-{{data[3]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Mata Pelajaran</label>
+                                  <p class="card-text">
+                                      {{data[4]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Guru Pengajar</label>
+                                  <p class="card-text">
+                                      {{data[5]}}
+                                  </p>
+                              </div>
+                          </div>
+                          </div>
+                          <div class="card-footer text-center">
+                              <p class="card-text" style="font-weight: bold">Anda yakin ingin menghapus data jadwal ini?</p>
+                          </div>
+                          <div class="card-footer text-right">
+                              <button class="btn btn-primary" type="submit">Hapus</button>
+                              <a href="/dashboard_admin/jadwal/{{data[0]}}" class="btn btn-danger">Batal</a>
+                        </div>
+                      </form>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

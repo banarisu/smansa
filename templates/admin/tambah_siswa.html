@@ -100,7 +100,70 @@
                   </div>
               </div>
               <div class="section-body">
-                  <h4 class="text-dark" style="text-align: center">Ini tambah siswa, belum diisi</h4>
+                  <div class="card">
+                      <form action="/dashboard_admin/tambah_siswa" method="post">
+                          <div class="card-header">
+                              <div class="card-header-action me-auto">
+                                  <a href="/dashboard_admin/upload_file/siswa" class="btn btn-primary">
+                                      Upload File Data Siswa
+                                  </a>
+                              </div>
+                          </div>
+                          <div class="card-body">
+                              <div class="form-group">
+                                  <label>NIS</label>
+                                  <input type="text" name="nis" class="form-control" required>
+                              </div>
+                              <div class="form-group">
+                                  <label>Nama Lengkap</label>
+                                  <input type="text" name="nama" class="form-control" required>
+                              </div>
+                              <div class="form-group">
+                                  <label>Jenis Kelamin</label>
+                                  <div class="col-sm-9">
+                                      <div class="form-check">
+                                          <input class="form-check-input" type="radio" name="gender" id="laki" value="L" checked>
+                                          <label class="form-check-label" for="laki">Laki-laki</label>
+                                      </div>
+                                      <div class="form-check">
+                                          <input class="form-check-input" type="radio" name="gender" id="perempuan" value="P">
+                                          <label class="form-check-label" for="perempuan">Perempuan</label>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="form-group">
+                                  <label>Agama</label>
+                                  <select class="form-control" name="agama" id="agama" required>
+                                      <option selected value="">Pilih Agama</option>
+                                  {% for x in aga %}
+                                      <option value="{{ x[0] }}">{{ x[0] }}</option>
+                                  {% endfor %}
+                                  </select>
+                              </div>
+                              <div class="form-group">
+                                  <label>Email</label>
+                                  <input type="email" name="email" class="form-control" id="email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required>
+                              </div>
+                              <div class="form-group">
+                                  <label>Telepon</label>
+                                  <input type="tel" name="tel" class="form-control" id="telp" pattern="[0-9]+" required>
+                              </div>
+                              <div class="form-group">
+                                  <label>Kelas</label>
+                                  <select class="form-control" name="kls" id="kelas" required>
+                                      <option selected value="">Pilih Kelas Siswa</option>
+                                  {% for x in kls %}
+                                      <option value="{{ x[0] }}">{{ x[1] }}</option>
+                                  {% endfor %}
+                                  </select>
+                              </div>
+                          </div>
+                          <div class="card-footer text-right">
+                              <button class="btn btn-primary" type="submit">Tambah</button>
+                              <a href="/dashboard_admin/data_siswa" class="btn btn-danger">Batal</a>
+                        </div>
+                      </form>
+                  </div>
               </div>
           </section>
       </div>
