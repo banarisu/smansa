@@ -27,7 +27,7 @@
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Peminjaman Buku</span></a>
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Peminjaman</span></a>
               <ul class="dropdown-menu">
                   <li>
                       <a class="nav-link" href="/dashboard_perpus">Data Peminjaman</a>
@@ -52,7 +52,48 @@
               <div class="section-body">
                   <h5 class="text-dark" style="text-align: center">{{ hari }}, {{ tanggal }}</h5>
                   <div class="row">
-
+                      <!-- Buku -->
+                      <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                          <div class="card card-statistic-1">
+                              <div class="card-icon bg-primary">
+                                  <i class="fas fa-book"></i>
+                              </div>
+                              <div class="card-wrap">
+                                  <div class="card-header">
+                                      <h4>Jumlah Buku</h4>
+                                  </div>
+                                  <div class="card-body"> {{ buku }} </div>
+                              </div>
+                          </div>
+                      </div>
+                      <!-- Sedang Dipinjam -->
+                      <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                          <div class="card card-statistic-1">
+                              <div class="card-icon bg-success">
+                                  <i class="far fa-file"></i>
+                              </div>
+                              <div class="card-wrap">
+                                  <div class="card-header">
+                                      <h4>Buku Sedang Dipinjam</h4>
+                                  </div>
+                                  <div class="card-body"> {{ pinjam }} </div>
+                              </div>
+                          </div>
+                      </div>
+                      <!-- Total Peminjaman -->
+                      <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                          <div class="card card-statistic-1">
+                              <div class="card-icon bg-warning">
+                                  <i class="fas fa-archive"></i>
+                              </div>
+                              <div class="card-wrap">
+                                  <div class="card-header">
+                                      <h4>Total Peminjaman Buku</h4>
+                                  </div>
+                                  <div class="card-body"> {{ total }} </div>
+                              </div>
+                          </div>
+                      </div>
                   </div>
               </div>
           </section>

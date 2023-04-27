@@ -158,8 +158,10 @@ def admin():
         d = tanggal.strftime("%d")
         m = cekBulan(tanggal.month)
         y = tanggal.strftime("%Y")
+        # dt = tanggal
         dt = d + " " + m + " " + y
         dow = tanggal.isoweekday()
+        # numHari = hari
         numHari = cekHari(dow)
 
         # Fetch jumlah guru
@@ -716,7 +718,7 @@ def datarombel(kode, page):
         rombel = cursor.fetchall()
 
         # Ambil nama kelas dari kode kelas
-        sql = "SELECT namakelas FROM kelas WHERE kelas = %s"
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
         cursor.execute(sql, kode)
         kelas = cursor.fetchone()
 
@@ -741,7 +743,45 @@ def datarombel(kode, page):
         # Jika halaman selanjutnya kosong
         if not lanjut:
             lanjut = False
-        return render_template('admin/data_rombel.html', kode=kode, kelas=kelas[0], count=fp, rombel=rombel, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_rombel.html', kode=kode, kelas=kelas, count=fp, rombel=rombel, prev=prev, next=next, lanjut=lanjut, status=Stat)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_admin/edit_rombel/<id>', methods = ['GET', 'POST'])
+def editrombel(id):
+    if verifLogin(1):
+        openDb()
+        # Status berhasil & error
+        global Stat
+        # Ambil data siswa yang akan diedit
+        sql = "SELECT s.nis, s.nama, k.kelas, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas WHERE s.nis = %s"
+        cursor.execute(sql, id)
+        data = cursor.fetchone()
+
+        # Ambil list kelas untuk ditampilkan pada pilihan dropdown
+        cursor.execute('SELECT kelas, namakelas FROM kelas')
+        kls = cursor.fetchall()
+
+        # Jika user menekan tombol submit, maka mengumpulkan semua data yang ada di form
+        if request.method == 'POST':
+            try:
+                nis = request.form['nis']
+                kelas = request.form.get('kls')
+                detail = (kelas, nis)
+
+                # Update data kelas siswa
+                cursor.execute('UPDATE rombel SET kelas = %s WHERE anggota = %s', detail)
+                conn.commit()
+
+                Stat = True
+                flash('Data berhasil diubah')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('datarombel', kode=data[2]))
+        return render_template('admin/edit_rombel.html', data=data, kls=kls)
     else:
         return redirect(url_for('index'))
 
@@ -1177,7 +1217,7 @@ def hapusstaf(id):
 
 @app.route('/dashboard_admin/tambah_staf', methods = ['GET', 'POST'], defaults={'page':1})
 @app.route('/dashboard_admin/tambah_staf/<int:page>', methods = ['GET', 'POST'])
-def tambahStaf(page):
+def tambahstaf(page):
     if verifLogin(1):
         openDb()
         perPage = 10
@@ -1263,27 +1303,77 @@ def addStaf(id):
 @app.route('/dashboard_guru', methods = ['GET', 'POST'])
 def guru():
     if verifLogin(2):
-        return render_template('guru/dashboard_guru.html')
+        # Fetch hari & tanggal saat ini
+        tanggal = date.today()
+        d = tanggal.strftime("%d")
+        m = cekBulan(tanggal.month)
+        y = tanggal.strftime("%Y")
+        # dt = tanggal
+        dt = d + " " + m + " " + y
+        dow = tanggal.isoweekday()
+        # numHari = hari
+        numHari = cekHari(dow)
+        return render_template('guru/dashboard_guru.html', hari=numHari, tanggal=dt)
     else:
         return redirect(url_for('index'))
+
 
 ''' Akses Siswa '''
 @app.route('/dashboard_siswa', methods = ['GET', 'POST'])
 def siswa():
     if verifLogin(3):
-        return render_template('siswa/dashboard_siswa.html')
+        # Fetch hari & tanggal saat ini
+        tanggal = date.today()
+        d = tanggal.strftime("%d")
+        m = cekBulan(tanggal.month)
+        y = tanggal.strftime("%Y")
+        # dt = tanggal
+        dt = d + " " + m + " " + y
+        dow = tanggal.isoweekday()
+        # numHari = hari
+        numHari = cekHari(dow)
+        return render_template('siswa/dashboard_siswa.html', hari=numHari, tanggal=dt)
     else:
         return redirect(url_for('index'))
 
-#Akses Perpustakaan
-@app.route('/dashboard_perpustakaan', methods = ['GET', 'POST'])
+
+''' Akses Perpustakaan '''
+@app.route('/dashboard_perpus', methods = ['GET', 'POST'])
 def perpus():
     if verifLogin(4):
-        return render_template('perpus/dashboard_perpus.html')
+        openDb()
+        # Fetch hari & tanggal saat ini
+        tanggal = date.today()
+        d = tanggal.strftime("%d")
+        m = cekBulan(tanggal.month)
+        y = tanggal.strftime("%Y")
+        # dt = tanggal
+        dt = d + " " + m + " " + y
+        dow = tanggal.isoweekday()
+        # numHari = hari
+        numHari = cekHari(dow)
+
+        # Fetch jumlah buku
+        sql = "SELECT COUNT(*) FROM databuku"
+        cursor.execute(sql)
+        res = cursor.fetchone()
+        numBuku = res[0]
+
+        # Fetch jumlah total peminjaman
+        sql = "SELECT COUNT(*) FROM peminjamanbuku"
+        cursor.execute(sql)
+        res = cursor.fetchone()
+        totPeminjaman = res[0]
+
+        # Fetch jumlah buku yang sedang dipinjam
+        sql = "SELECT COUNT(*) FROM peminjamanbuku WHERE statuspinjam = 'Dipinjam'"
+        cursor.execute(sql)
+        res = cursor.fetchone()
+        ongoingPeminjaman = res[0]
+        closeDb()
+        return render_template('perpus/dashboard_perpus.html', hari=numHari, tanggal=dt, buku=numBuku, total=totPeminjaman, pinjam=ongoingPeminjaman)
     else:
         return redirect(url_for('index'))
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
