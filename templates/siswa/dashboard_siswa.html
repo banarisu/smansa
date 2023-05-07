@@ -57,7 +57,7 @@
                   <h5 class="text-dark" style="text-align: center">{{ hari }}, {{ tanggal }}</h5>
                   <div class="card">
                       <div class="card-header">
-                          <h4>Jadwal Belajar Hari Ini</h4>
+                          <h4>Jadwal Anda Hari Ini (Kelas {{kelas[1]}})</h4>
                       </div>
                       <div class="card-body">
                           <table class="table table-hover table-striped table-bordered text-center" style="margin-top: 10px">
@@ -78,7 +78,7 @@
                                   <td>{{ data[4] }}</td>
                               </tr>
                               {% endfor %}
-                              <!-- Namun jika tabel kelas kosong -->
+                              <!-- Namun jika tabel jadwal kosong -->
                               {% else %}
                               <tr>
                                   <td colspan="3">Tidak ada jadwal hari ini</td>

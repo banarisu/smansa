@@ -52,49 +52,13 @@ def verifLogin(a):
 
 #Penamaan hari berdasarkan angka
 def cekHari(dow):
-    if dow == 1:
-        hari="Senin"
-    elif dow == 2:
-        hari="Selasa"
-    elif dow == 3:
-        hari="Rabu"
-    elif dow == 4:
-        hari="Kamis"
-    elif dow == 5:
-        hari="Jumat"
-    elif dow == 6:
-        hari="Sabtu"
-    elif dow == 7:
-        hari="Minggu"
-    return hari;
+    nmHr = ("","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu")
+    return nmHr[dow];
 
 #Penamaan bulan berdasarkan angka
 def cekBulan(mm):
-    if mm == 1:
-        month="Januari"
-    elif mm == 2:
-        month="Februari"
-    elif mm == 3:
-        month="Maret"
-    elif mm == 4:
-        month="April"
-    elif mm == 5:
-        month="Mei"
-    elif mm == 6:
-        month="Juni"
-    elif mm == 7:
-        month="Juli"
-    elif mm == 8:
-        month="Agustus"
-    elif mm == 9:
-        month="September"
-    elif mm == 10:
-        month="Oktober"
-    elif mm == 11:
-        month="November"
-    elif mm == 12:
-        month="Desember"
-    return month;
+    bln = ("","Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember")
+    return bln[mm];
 
 #Fungsi untuk membersihkan session ketika logout
 @app.route('/logout')
@@ -550,8 +514,8 @@ def formupload(tipe):
             guru = True
             siswa = False
 
-        # Jika user menekan tombol upload
-        if request.method == 'POST':
+        # Jika user menekan tombol upload guru
+        if request.method == 'POST' and guru:
             try:
                 Stat = True
                 flash('Data berhasil ditambahkan')
@@ -559,15 +523,21 @@ def formupload(tipe):
                 Stat = False
                 flash('Terjadi kesalahan')
                 flash(err)
-            if siswa:
-                return redirect(url_for('datasiswa'))
-            elif guru:
-                return redirect(url_for('dataguru'))
+            return redirect(url_for('dataguru'))
+        # Jika user menekan tombol upload siswa
+        elif request.method == 'POST' and siswa:
+            try:
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('datasiswa'))
         closeDb()
-        return render_template('admin/form_upload.html', siswa=siswa, guru=guru)
+        return render_template('admin/form_upload.html', siswa=siswa, guru=guru, tipe=tipe)
     else:
         return redirect(url_for('index'))
-
 
 @app.route('/dashboard_admin/data_kelas', methods = ['GET', 'POST'], defaults={'page':1})
 @app.route('/dashboard_admin/data_kelas/<int:page>', methods = ['GET', 'POST'])
@@ -1303,6 +1273,7 @@ def addStaf(id):
 @app.route('/dashboard_guru', methods = ['GET', 'POST'])
 def guru():
     if verifLogin(2):
+        openDb()
         # Fetch hari & tanggal saat ini
         tanggal = date.today()
         d = tanggal.strftime("%d")
@@ -1322,6 +1293,7 @@ def guru():
 @app.route('/dashboard_siswa', methods = ['GET', 'POST'])
 def siswa():
     if verifLogin(3):
+        openDb()
         # Fetch hari & tanggal saat ini
         tanggal = date.today()
         d = tanggal.strftime("%d")
@@ -1332,7 +1304,22 @@ def siswa():
         dow = tanggal.isoweekday()
         # numHari = hari
         numHari = cekHari(dow)
-        return render_template('siswa/dashboard_siswa.html', hari=numHari, tanggal=dt)
+
+        # Fetch kelas dari siswa yang login
+        sql = "SELECT r.kelas, k.namakelas from rombel r LEFT JOIN kelas k ON r.kelas = k.kelas WHERE r.anggota = %s"
+        cursor.execute(sql, session['id'])
+        kls = cursor.fetchone()
+
+        # Fetch data jadwal hari ini
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
+        temp = (kls[0], numHari)
+        cursor.execute(sql, temp)
+        jadwal = cursor.fetchall()
+
+        # Jika jadwal kelas tersebut kosong
+        if not jadwal:
+            jadwal = False;
+        return render_template('siswa/dashboard_siswa.html', hari=numHari, tanggal=dt, jadwal=jadwal, kelas=kls)
     else:
         return redirect(url_for('index'))
 

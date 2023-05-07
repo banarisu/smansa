@@ -87,21 +87,82 @@
           <section class="section">
               <div class="section-header">
                   <h1>Form Upload File</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin">Dashboard</a>
+                      </div>
+                      {% if guru == true %}
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin/data_guru">Data Guru</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Upload Data Guru
+                      </div>
+                      {% endif %}
+                      {% if siswa == true %}
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_admin/data_siswa">Data Siswa</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Upload Data Siswa
+                      </div>
+                      {% endif %}
+                  </div>
               </div>
               <div class="section-body">
                   <div class="card">
                       <div class="card-header">
-                          Silahkan Upload File sesuai panduan di bawah ini
+                          <p class="card-text" >Silahkan Upload File sesuai panduan di bawah ini</p>
                       </div>
                       <div class="card-body">
+                          <p class="card-text" >• Data dimulai dari baris ke-2 kolom ke-1</p>
                           <div class="row">
-                              <div class="col-12 col-sm-12 col-md-4">
-                                  <p>Guru:</p>
+                              <div class="col-12 col-md-6 col-lg-6">
+                                  <h6>Guru:</h6>
+                                  <p class="card-text">File terdiri dari 6 kolom berurutan:</p>
+                                  <ul>
+                                      <li>NUPTK</li>
+                                      <li>Nama Lengkap</li>
+                                      <li>Jenis Kelamin (L/P)</li>
+                                      <li>Agama</li>
+                                      <li>Email</li>
+                                      <li>Telepon</li>
+                                  </ul>
                               </div>
-                              <div class="col-12 col-sm-12 col-md-4">
-                                  <p>Siswa:</p>
+                              <div class="col-12 col-lg-6 col-md-6">
+                                  <h6>Siswa:</h6>
+                                  <p class="card-text">File terdiri dari 7 kolom berurutan:</p>
+                                  <ul>
+                                      <li>NIS</li>
+                                      <li>Nama Lengkap</li>
+                                      <li>Jenis Kelamin (L/P)</li>
+                                      <li>Agama</li>
+                                      <li>Email</li>
+                                      <li>Telepon</li>
+                                      <li>Kode Kelas (X_A, XI_B, dst)</li>
+                                  </ul>
                               </div>
                           </div>
+                      </div>
+                      <div class="card-footer">
+                          <form action="/dashboard_admin/upload_file/{{tipe}}" method="post">
+                          <div class="row">
+                              <div class="col-12 col-md-6 col-lg-6">
+                                  <div class="form-group">
+                                      <label>Upload file data guru</label>
+                                      <input type="file" class="form-control" name="fileGuru" {% if guru == true %} required {% endif %}>
+                                      <button class="btn btn-primary {% if siswa == true %} disabled {% endif %}" style="margin-top: 10px" type="submit">Upload Guru</button>
+                                  </div>
+                              </div>
+                              <div class="col-12 col-lg-6 col-md-6">
+                                  <div class="form-group">
+                                      <label>Upload file data siswa</label>
+                                      <input type="file" class="form-control" name="fileSiswa" {% if siswa == true %} required {% endif %}>
+                                      <button class="btn btn-primary {% if guru == true %} disabled {% endif %}" style="margin-top: 10px" type="submit">Upload Siswa</button>
+                                  </div>
+                              </div>
+                          </div>
+                          </form>
                       </div>
                   </div>
               </div>
