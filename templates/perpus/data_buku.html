@@ -1,6 +1,6 @@
-{% set title = 'Admin - Data Siswa SMA Negeri 1 Belinyu' %}
+{% set title = 'Perpustakaan - Dashboard SMA Negeri 1 Belinyu' %}
 {% extends "master/base.html" %}
-<
+
 {% block sidebar %}
   <div class="main-sidebar">
     <aside id="sidebar-wrapper">
@@ -11,68 +11,29 @@
             <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
         </div>
         <ul class="sidebar-menu">
-            <li class="menu-header">Dashboard Admin</li>
-          <li class="nav-item dropdown">
-              <a href="/dashboard_admin" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            <li class="menu-header">Dashboard Perpustakaan</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_perpus" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
             </li>
-          <li class="nav-item dropdown">
-              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Guru</span></a>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/data_guru">Lihat data guru</a>
-                  </li>
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/tambah_guru">Tambah guru</a>
-                  </li>
-              </ul>
-            </li>
-          <li class="nav-item dropdown active">
-              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Siswa</span></a>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Buku</span></a>
               <ul class="dropdown-menu">
                   <li class="active">
-                      <a class="nav-link" href="/dashboard_admin/data_siswa">Lihat data siswa</a>
+                      <a class="nav-link" href="/dashboard_perpus/buku">Data Buku</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_admin/tambah_siswa">Tambah siswa</a>
-                  </li>
-              </ul>
-            </li>
-          <li class="nav-item dropdown">
-              <a href="#" class="nav-link has-dropdown"><i class="fas fa-columns"></i><span>Data Kelas</span></a>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/data_kelas">Data Kelas</a>
-                  </li>
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/tambah_kelas">Tambah Kelas</a>
-                  </li>
-              </ul>
-            </li>
-          <li class="nav-item dropdown">
-              <a href="#" class="nav-link has-dropdown"><i class="fas fa-file-alt"></i><span>Data Jadwal</span></a>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/data_jadwal">Data Jadwal</a>
-                  </li>
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/tambah_jadwal">Tambah Jadwal</a>
-                  </li>
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/data_mapel">Data Mata Pelajaran</a>
-                  </li>
-                  <li>
-                      <a class="nav-link" href="/dashboard_admin/tambah_mapel">Tambah Mata Pelajaran</a>
+                      <a class="nav-link" href="/dashboard_perpus/tambah_buku">Tambah Buku</a>
                   </li>
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Staf</span></a>
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Peminjaman</span></a>
               <ul class="dropdown-menu">
                   <li>
-                      <a class="nav-link" href="/dashboard_admin/data_staf">Data Staf</a>
+                      <a class="nav-link" href="/dashboard_perpus/peminjaman">Data Peminjaman</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_admin/tambah_staf">Tambah Staf</a>
+                      <a class="nav-link" href="/dashboard_perpus/tambah_peminjaman">Peminjaman Baru</a>
                   </li>
               </ul>
             </li>
@@ -86,13 +47,13 @@
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1>Data Siswa</h1>
+                  <h1>Data Buku</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
-                          <a href="/dashboard_admin">Dashboard</a>
+                          <a href="/dashboard_perpus">Dashboard</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Data Siswa
+                          Data Buku
                       </div>
                   </div>
               </div>
@@ -126,7 +87,7 @@
                   {% endwith %}
                   <form class="form-inline mr-auto" style="margin: 10px" method="POST">
                       <div class="search-element">
-                          <input class="form-control" type="text" name="search" placeholder="Cari nama di sini" data-width="250" style="width: 250px;">
+                          <input class="form-control" type="text" name="search" placeholder="Cari buku di sini" data-width="250" style="width: 250px;">
                           <button class="btn" type="submit">
                               <i class="fas fa-search"></i>
                           </button>
@@ -136,21 +97,19 @@
                       <thead class="bg-primary">
                           <tr>
                               <th class="text-light">No</th>
-                              <th class="text-light">NIS</th>
-                              <th class="text-light">Nama Lengkap</th>
-                              <th class="text-light">Jenis Kelamin</th>
-                              <th class="text-light">Agama</th>
-                              <th class="text-light">Email</th>
-                              <th class="text-light">Telepon</th>
-                              <th class="text-light">Kelas</th>
+                              <th class="text-light">ISBN</th>
+                              <th class="text-light">Nama Buku</th>
+                              <th class="text-light">Nama Penulis</th>
+                              <th class="text-light">Nama Penerbit</th>
+                              <th class="text-light">Tahun Terbit</th>
                               <th class="text-light">Aksi</th>
                           </tr>
                       </thead>
                       <tbody>
-                      <!-- Jika tabel siswa tidak kosong, maka tampilkan... -->
-                      {% if siswa is not false %}
+                      <!-- Jika tabel buku tidak kosong, maka tampilkan... -->
+                      {% if buku is not false %}
                       <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
-                      {% for data in siswa %}
+                      {% for data in buku %}
                           <tr>
                               {% set x = count+loop.index %}
                               <td>{{ x }}</td>
@@ -159,14 +118,12 @@
                               <td>{{ data[2] }}</td>
                               <td>{{ data[3] }}</td>
                               <td>{{ data[4] }}</td>
-                              <td>{{ data[5] }}</td>
-                              <td>{{ data[6] }}</td>
                               <td>
                                   <div class="btn-group mb-3" role="group">
-                                      <a href="/dashboard_admin/edit_siswa/{{data[0]}}" class="btn btn-icon btn-warning">
+                                      <a href="/dashboard_perpus/edit_buku/{{data[0]}}" class="btn btn-icon btn-warning">
                                           <i class="far fa-edit"></i>
                                       </a>
-                                      <a href="/dashboard_admin/hapus_siswa/{{data[0]}}" class="btn btn-icon btn-danger">
+                                      <a href="/dashboard_perpus/hapus_buku/{{data[0]}}" class="btn btn-icon btn-danger">
                                           <i class="fas fa-times"></i>
                                       </a>
                                   </div>
@@ -176,7 +133,7 @@
                       <!-- Namun jika tabel siswa kosong -->
                       {% else %}
                           <tr>
-                              <td colspan="9">Data tidak ditemukan</td>
+                              <td colspan="7">Data tidak ditemukan</td>
                           </tr>
                       {% endif %}
                       </tbody>
@@ -186,14 +143,14 @@
                           <ul class="pagination">
                               {% if prev < 1 %}
                               <li class="page-item disabled">
-                                  <a class="page-link" href="{{ url_for('datasiswa', page=prev) }}" aria-label="Previous">
+                                  <a class="page-link" href="{{ url_for('buku', page=prev) }}" aria-label="Previous">
                                       <span aria-hidden="true">«Prev</span>
                                       <span class="sr-only">Previous</span>
                                   </a>
                               </li>
                               {% else %}
                               <li class="page-item">
-                                  <a class="page-link" href="{{ url_for('datasiswa', page=prev) }}" aria-label="Previous">
+                                  <a class="page-link" href="{{ url_for('buku', page=prev) }}" aria-label="Previous">
                                       <span aria-hidden="true">«Prev</span>
                                       <span class="sr-only">Previous</span>
                                   </a>
@@ -201,14 +158,14 @@
                               {% endif %}
                               {% if lanjut is false %}
                               <li class="page-item disabled">
-                                  <a class="page-link" href="{{ url_for('datasiswa', page=next) }}" aria-label="Next">
+                                  <a class="page-link" href="{{ url_for('buku', page=next) }}" aria-label="Next">
                                       <span aria-hidden="true">Next»</span>
                                       <span class="sr-only">Next</span>
                                   </a>
                               </li>
                               {% else %}
                               <li class="page-item">
-                                  <a class="page-link" href="{{ url_for('datasiswa', page=next) }}" aria-label="Next">
+                                  <a class="page-link" href="{{ url_for('buku', page=next) }}" aria-label="Next">
                                       <span aria-hidden="true">Next»</span>
                                       <span class="sr-only">Next</span>
                                   </a>

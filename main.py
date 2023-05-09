@@ -4,6 +4,7 @@ from flask import Flask, flash, session, render_template,\
 from flask_session import Session
 from datetime import datetime, date
 import pymysql.cursors
+import re
 
 app = Flask(__name__)
 app.secret_key = "Smansa"
@@ -17,6 +18,7 @@ conn = cursor = None
 
 # Deklarasi variabel global status berhasil/error untuk diakses beberapa fungsi
 Stat = True
+lanjut = True
 # Variabel dummy untuk menguji jika gender = P maka perempuan, sebaliknya laki-laki
 gend = "P"
 
@@ -162,39 +164,39 @@ def admin():
 def dataguru(page):
     if verifLogin(1):
         openDb()
-        perPage = 10
+        global lanjut, Stat
         prev = page-1
         next = page+1
-        firstPage = page*perPage
-        fp = firstPage-10
+        counter = prev*10
         #Ambil daftar guru dari database
-        sql = "SELECT * FROM guru ORDER BY nama limit "+str(fp)+", "+str(perPage)
+        sql = "SELECT * FROM guru ORDER BY nama"
         cursor.execute(sql)
-        guru = cursor.fetchall()
-
-        #Ambil data halaman selanjutnya
-        sql2 = "SELECT * FROM guru ORDER BY nama limit " + str(firstPage) + ", " + str(perPage)
-        cursor.execute(sql2)
-        lanjut = cursor.fetchall()
-
+        guruAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        guru = guruAll[counter:page * 10]
+        # Data slice halaman selanjutnya
+        nextPage = guruAll[page * 10:next * 10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
         if request.method == 'POST':
             # Jika user melakukan searching
             if request.form['search']:
                 # Searching dengan mencocokkan nama guru
-                sql = "SELECT * FROM guru WHERE nama LIKE '%" + request.form['search'] + "%' ORDER BY nama limit " + str(fp) + ", " + str(perPage)
-                cursor.execute(sql)
-                guru = cursor.fetchall()
-                lanjut=False
-
+                try:
+                    sql = "SELECT * FROM guru WHERE nama LIKE '%" + request.form['search'] + "%' ORDER BY nama"
+                    cursor.execute(sql)
+                    guru = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
         # Jika databasenya kosong
         if not guru:
             guru = False
-
-        # Jika halaman selanjutnya kosong
-        if not lanjut:
-            lanjut = False
         closeDb()
-        return render_template('admin/data_guru.html', count=fp, guru=guru, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_guru.html', count=counter, guru=guru, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -323,38 +325,38 @@ def tambahguru():
 def datasiswa(page):
     if verifLogin(1):
         openDb()
-        perPage = 10
+        global lanjut, Stat
         prev = page - 1
         next = page + 1
-        firstPage = page * perPage
-        fp = firstPage - 10
+        counter = prev*10
         # Ambil daftar siswa dari database
-        sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
+        sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas ORDER BY s.nama"
         cursor.execute(sql)
-        siswa = cursor.fetchall()
-
-        # Cek jika halaman selanjutnya masih ada data atau tidak
-        sql2 = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas ORDER BY s.nama limit " + str(firstPage) + ", " + str(perPage)
-        cursor.execute(sql2)
-        lanjut = cursor.fetchall()
-
+        siswaAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        siswa = siswaAll[counter:page*10]
+        # Data slice halaman selanjutnya
+        nextPage = siswaAll[page*10:next*10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
         if request.method == 'POST':
             # Jika user melakukan searching
             if request.form['search']:
-                sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas WHERE s.nama LIKE '%" + request.form[
-                    'search'] + "%' ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
-                cursor.execute(sql)
-                siswa = cursor.fetchall()
-                lanjut = False
-
+                # Searching dengan mencocokkan nama siswa
+                try:
+                    sql = "SELECT s.nis, s.nama, s.jeniskelamin, s.agama, s.email, s.telepon, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON r.kelas = k.kelas WHERE s.nama LIKE '%" + request.form['search'] + "%' ORDER BY s.nama"
+                    cursor.execute(sql)
+                    siswa = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
         # Jika databasenya kosong
         if not siswa:
             siswa = False
-
-        # Jika halaman selanjutnya kosong
-        if not lanjut:
-            lanjut = False
-        return render_template('admin/data_siswa.html', count=fp, siswa=siswa, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_siswa.html', count=counter, siswa=siswa, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -544,31 +546,26 @@ def formupload(tipe):
 def datakelas(page):
     if verifLogin(1):
         openDb()
-        perPage = 10
+        global Stat, lanjut
         prev = page - 1
         next = page + 1
-        firstPage = page * perPage
-        fp = firstPage - 10
+        counter = prev * 10
         # Ambil daftar kelas, nama wali kelas, dan jumlah siswa dari database
-        sql = "SELECT k.kelas, k.namakelas, g.nama, COUNT(r.anggota) FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk LEFT JOIN rombel r ON k.kelas = r.kelas GROUP BY k.kelas ORDER BY k.kelas ASC limit " + str(fp) + ", " + str(perPage)
+        sql = "SELECT k.kelas, k.namakelas, g.nama, COUNT(r.anggota) FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk LEFT JOIN rombel r ON k.kelas = r.kelas GROUP BY k.kelas ORDER BY k.kelas ASC"
         cursor.execute(sql)
-        kelas = cursor.fetchall()
-
-        # Ambil data halaman selanjutnya
-        sql2 = "SELECT k.kelas, k.namakelas, g.nama, COUNT(r.anggota) FROM kelas k LEFT JOIN guru g ON k.walikelas = g.nuptk LEFT JOIN rombel r ON k.kelas = r.kelas GROUP BY k.kelas ORDER BY k.kelas ASC limit " + str(firstPage) + ", " + str(perPage)
-        cursor.execute(sql2)
-        lanjut = cursor.fetchall()
-
+        kelasAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        kelas = kelasAll[counter:page * 10]
+        # Data slice halaman selanjutnya
+        nextPage = kelasAll[page * 10:next * 10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
         # Jika databasenya kosong
         if not kelas:
             kelas = False
-
-        # Jika halaman selanjutnya kosong
-        if not lanjut:
-            lanjut = False
-
         closeDb()
-        return render_template('admin/data_kelas.html', count=fp, kelas=kelas, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_kelas.html', count=counter, kelas=kelas, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -666,8 +663,8 @@ def tambahkelas():
                 Stat = False
                 flash('Terjadi kesalahan')
                 flash(err)
-            closeDb()
             return redirect(url_for('datakelas'))
+        closeDb()
         return render_template('admin/tambah_kelas.html', wali=wali)
     else:
         return redirect(url_for('index'))
@@ -677,43 +674,44 @@ def tambahkelas():
 def datarombel(kode, page):
     if verifLogin(1):
         openDb()
-        perPage = 10
+        global Stat, lanjut
         prev = page - 1
         next = page + 1
-        firstPage = page * perPage
-        fp = firstPage - 10
-        # Ambil daftar siswa kelas tersebut dari database
-        sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
-        cursor.execute(sql, kode)
-        rombel = cursor.fetchall()
-
+        counter=prev*10
         # Ambil nama kelas dari kode kelas
         sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
         cursor.execute(sql, kode)
         kelas = cursor.fetchone()
-
-        # Cek jika halaman selanjutnya masih ada data atau tidak
-        sql2 = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s ORDER BY s.nama limit " + str(firstPage) + ", " + str(perPage)
-        cursor.execute(sql2, kode)
-        lanjut = cursor.fetchall()
-
+        # Ambil daftar siswa kelas tersebut dari database
+        sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s ORDER BY s.nama"
+        cursor.execute(sql, kode)
+        rombelAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        rombel = rombelAll[counter:page * 10]
+        # Data slice halaman selanjutnya
+        nextPage = rombelAll[page * 10:next * 10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
         if request.method == 'POST':
             # Jika user melakukan searching
             if request.form['search']:
-                sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s AND s.nama LIKE '%" + request.form[
-                    'search'] + "%' ORDER BY s.nama limit " + str(fp) + ", " + str(perPage)
-                cursor.execute(sql, kode)
-                rombel = cursor.fetchall()
-                lanjut = False
-
+                # Searching dengan mencocokkan nama siswa
+                try:
+                    sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s AND s.nama LIKE '%" + request.form[
+                    'search'] + "%' ORDER BY s.nama"
+                    cursor.execute(sql, kode)
+                    rombel = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
         # Jika databasenya kosong
         if not rombel:
             rombel = False
-
-        # Jika halaman selanjutnya kosong
-        if not lanjut:
-            lanjut = False
-        return render_template('admin/data_rombel.html', kode=kode, kelas=kelas, count=fp, rombel=rombel, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        closeDb()
+        return render_template('admin/data_rombel.html', kode=kode, kelas=kelas, count=counter, rombel=rombel, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -783,7 +781,6 @@ def jadwal(kode, hari):
         # Ambil data jadwal menurut kelas yang dipilih
         sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
         detail=(kode, hari)
-        print(detail)
         cursor.execute(sql, detail)
         jadwal = cursor.fetchall()
 
@@ -981,40 +978,41 @@ def hapusjadwal(kode, hari, jam):
 def datamapel(page):
     if verifLogin(1):
         openDb()
-        perPage = 10
+        global Stat, lanjut
         prev = page - 1
         next = page + 1
-        firstPage = page * perPage
-        fp = firstPage - 10
+        counter = prev*10
         # Ambil daftar mapel dari database
-        sql = "SELECT * FROM mapel ORDER BY namamapel limit " + str(fp) + ", " + str(perPage)
+        sql = "SELECT * FROM mapel ORDER BY namamapel"
         cursor.execute(sql)
-        mapel = cursor.fetchall()
-
-        # Ambil data halaman selanjutnya
-        sql2 = "SELECT * FROM mapel ORDER BY namamapel limit " + str(firstPage) + ", " + str(perPage)
-        cursor.execute(sql2)
-        lanjut = cursor.fetchall()
-
+        mapelAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        mapel = mapelAll[counter:page * 10]
+        # Data slice halaman selanjutnya
+        nextPage = mapelAll[page * 10:next * 10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
         if request.method == 'POST':
             # Jika user melakukan searching
             if request.form['search']:
-                # Ambil data berdasarkan inputan dengan mencocokkan nama atau kode mapel
-                sql = "SELECT * FROM mapel WHERE namamapel LIKE '%" + request.form['search'] + "%' OR kodemapel LIKE '%" + request.form['search'] + "%' ORDER BY namamapel limit " + str(fp) + ", " + str(perPage)
-                cursor.execute(sql)
-                mapel = cursor.fetchall()
-                lanjut=False
-
+                # Searching dengan nama atau kode mapel
+                try:
+                    sql = "SELECT * FROM mapel WHERE kodemapel LIKE '%" + \
+                          request.form['search'] + "%' OR namamapel LIKE '%" + request.form[
+                              'search'] + "%' ORDER BY namamapel"
+                    cursor.execute(sql)
+                    mapel = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
         # Jika databasenya kosong
         if not mapel:
             mapel = False
-
-        # Jika halaman selanjutnya kosong
-        if not lanjut:
-            lanjut = False
         closeDb()
-
-        return render_template('admin/data_mapel.html', count=fp, mapel=mapel, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_mapel.html', count=counter, mapel=mapel, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -1190,42 +1188,40 @@ def hapusstaf(id):
 def tambahstaf(page):
     if verifLogin(1):
         openDb()
-        perPage = 10
+        global Stat, lanjut
         prev = page - 1
         next = page + 1
-        firstPage = page * perPage
-        fp = firstPage - 10
+        counter = prev * 10
         # Ambil daftar guru dari database yang bukan staf admin/perpus
-        sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 ORDER BY nama limit " + str(fp) + ", " + str(perPage)
+        sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 ORDER BY nama"
         cursor.execute(sql)
-        staf = cursor.fetchall()
-
-        # Ambil data halaman selanjutnya
-        sql2 = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 ORDER BY nama limit " + str(firstPage) + ", " + str(perPage)
-        cursor.execute(sql2)
-        lanjut = cursor.fetchall()
-
+        stafAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        staf = stafAll[counter:page * 10]
+        # Data slice halaman selanjutnya
+        nextPage = stafAll[page * 10:next * 10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
         if request.method == 'POST':
             # Jika user melakukan searching
             if request.form['search']:
                 # Searching dengan mencocokkan nama guru
-                sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 AND g.nama LIKE '%" + request.form[
-                    'search'] + "%' ORDER BY nama limit " + str(
-                    fp) + ", " + str(perPage)
-                cursor.execute(sql)
-                staf = cursor.fetchall()
-                # Jika melakukan searching, disable pagination
-                lanjut = False
-
+                try:
+                    sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 AND g.nama LIKE '%" + request.form[
+                    'search'] + "%' ORDER BY nama"
+                    cursor.execute(sql)
+                    staf = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
         # Jika databasenya kosong
         if not staf:
             staf = False
-
-        # Jika halaman selanjutnya kosong
-        if not lanjut:
-            lanjut = False
         closeDb()
-        return render_template('admin/tambah_staf.html', count=fp, staf=staf, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/tambah_staf.html', count=counter, staf=staf, prev=prev, next=next, lanjut=lanjut, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -1323,6 +1319,37 @@ def siswa():
     else:
         return redirect(url_for('index'))
 
+@app.route('/dashboard_siswa/jadwal/<kelas>/<hari>', methods = ['GET','POST'])
+def jadwalSiswa(kelas, hari):
+    if verifLogin(3):
+        openDb()
+        global Stat
+        tambah = True
+        # Ambil nama kelas dari kode kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data jadwal menurut kelas yang dipilih
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, g.nama FROM jadwal j LEFT JOIN guru g ON j.pengajar = g.nuptk LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.kelas = %s AND j.hari = %s ORDER BY j.jam"
+        detail=(kelas, hari)
+        cursor.execute(sql, detail)
+        jadwal = cursor.fetchall()
+
+        # Ambil daftar hari belajar
+        sql = "SELECT * FROM haribelajar ORDER BY hari DESC"
+        cursor.execute(sql)
+        listHari = cursor.fetchall()
+
+        # Jika jadwal kelas tersebut kosong
+        if not jadwal:
+            jadwal = False;
+
+        closeDb()
+        return render_template('siswa/jadwal_siswa.html', kls=kls, hari=hari, jadwal=jadwal, listHari=listHari)
+    else:
+        return redirect(url_for('index'))
+
 
 ''' Akses Perpustakaan '''
 @app.route('/dashboard_perpus', methods = ['GET', 'POST'])
@@ -1359,6 +1386,68 @@ def perpus():
         ongoingPeminjaman = res[0]
         closeDb()
         return render_template('perpus/dashboard_perpus.html', hari=numHari, tanggal=dt, buku=numBuku, total=totPeminjaman, pinjam=ongoingPeminjaman)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/buku', methods = ['GET', 'POST'], defaults={'page':1})
+@app.route('/dashboard_perpus/buku/<int:page>', methods = ['GET', 'POST'])
+def buku(page):
+    if verifLogin(4):
+        openDb()
+        global lanjut, Stat
+        prev = page - 1
+        next = page + 1
+        counter = prev*10
+        # Ambil daftar buku dari database
+        sql = "SELECT isbn, namabuku, namapenulis, namapenerbit, tahunterbit FROM databuku ORDER BY namabuku"
+        cursor.execute(sql)
+        bukuAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        buku = bukuAll[counter:page*10]
+        # Data slice halaman selanjutnya
+        nextPage = bukuAll[page*10:next*10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
+        if request.method == 'POST':
+            # Jika user melakukan searching
+            if request.form['search']:
+                # Searching dengan mencocokkan nama buku
+                try:
+                    sql = "SELECT isbn, namabuku, namapenulis, namapenerbit, tahunterbit FROM databuku WHERE isbn LIKE '%" + request.form['search'] + "%' OR namabuku LIKE '%" + request.form['search'] + "%' OR namapenulis LIKE '%" + request.form['search'] + "%' OR namapenerbit LIKE '%" + request.form['search'] + "%' OR tahunterbit LIKE '%" + request.form['search'] + "%' ORDER BY s.nama"
+                    cursor.execute(sql)
+                    buku = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
+        # Jika databasenya kosong
+        if not buku:
+            buku = False
+        closeDb()
+        return render_template('perpus/data_buku.html', count=counter, buku=buku, prev=prev, next=next, lanjut=lanjut, status=Stat)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/edit_buku/<id>', methods = ['GET', 'POST'])
+def editbuku(id):
+    if verifLogin(4):
+        return render_template('perpus/edit_buku.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/hapus_buku/<id>', methods = ['GET', 'POST'])
+def hapusbuku(id):
+    if verifLogin(4):
+        return render_template('perpus/hapus_buku.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/tambah_buku/<id>', methods = ['GET', 'POST'])
+def tambahbuku():
+    if verifLogin(4):
+        return render_template('perpus/tambah_buku.html')
     else:
         return redirect(url_for('index'))
 
