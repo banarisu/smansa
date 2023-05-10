@@ -165,6 +165,7 @@ def dataguru(page):
     if verifLogin(1):
         openDb()
         global lanjut, Stat
+        pencarian = ""
         prev = page-1
         next = page+1
         counter = prev*10
@@ -184,6 +185,7 @@ def dataguru(page):
             if request.form['search']:
                 # Searching dengan mencocokkan nama guru
                 try:
+                    pencarian = request.form['search']
                     sql = "SELECT * FROM guru WHERE nama LIKE '%" + request.form['search'] + "%' ORDER BY nama"
                     cursor.execute(sql)
                     guru = cursor.fetchall()
@@ -196,7 +198,7 @@ def dataguru(page):
         if not guru:
             guru = False
         closeDb()
-        return render_template('admin/data_guru.html', count=counter, guru=guru, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_guru.html', count=counter, guru=guru, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian)
     else:
         return redirect(url_for('index'))
 
@@ -693,20 +695,6 @@ def datarombel(kode, page):
         # Jika halaman selanjutnya kosong
         if not nextPage:
             lanjut = False
-        if request.method == 'POST':
-            # Jika user melakukan searching
-            if request.form['search']:
-                # Searching dengan mencocokkan nama siswa
-                try:
-                    sql = "SELECT s.nis, s.nama FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota WHERE r.kelas = %s AND s.nama LIKE '%" + request.form[
-                    'search'] + "%' ORDER BY s.nama"
-                    cursor.execute(sql, kode)
-                    rombel = cursor.fetchall()
-                    lanjut = False
-                except Exception as err:
-                    Stat = False
-                    flash('Terjadi kesalahan')
-                    flash(err)
         # Jika databasenya kosong
         if not rombel:
             rombel = False
@@ -979,6 +967,7 @@ def datamapel(page):
     if verifLogin(1):
         openDb()
         global Stat, lanjut
+        pencarian = ""
         prev = page - 1
         next = page + 1
         counter = prev*10
@@ -998,6 +987,7 @@ def datamapel(page):
             if request.form['search']:
                 # Searching dengan nama atau kode mapel
                 try:
+                    pencarian = request.form['search']
                     sql = "SELECT * FROM mapel WHERE kodemapel LIKE '%" + \
                           request.form['search'] + "%' OR namamapel LIKE '%" + request.form[
                               'search'] + "%' ORDER BY namamapel"
@@ -1012,7 +1002,7 @@ def datamapel(page):
         if not mapel:
             mapel = False
         closeDb()
-        return render_template('admin/data_mapel.html', count=counter, mapel=mapel, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/data_mapel.html', count=counter, mapel=mapel, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian)
     else:
         return redirect(url_for('index'))
 
@@ -1066,7 +1056,6 @@ def hapusmapel(kode):
                 Stat = False
                 flash('Terjadi kesalahan')
                 flash(err)
-            closeDb()
             return redirect(url_for('datamapel'))
         closeDb()
         return render_template('admin/hapus_mapel.html', data=mapel)
@@ -1189,6 +1178,7 @@ def tambahstaf(page):
     if verifLogin(1):
         openDb()
         global Stat, lanjut
+        pencarian = ""
         prev = page - 1
         next = page + 1
         counter = prev * 10
@@ -1208,6 +1198,7 @@ def tambahstaf(page):
             if request.form['search']:
                 # Searching dengan mencocokkan nama guru
                 try:
+                    pencarian = request.form['search']
                     sql = "SELECT u.userid, g.nama, g.email FROM user u LEFT JOIN guru g ON u.userid = g.nuptk WHERE u.access = 2 AND g.nama LIKE '%" + request.form[
                     'search'] + "%' ORDER BY nama"
                     cursor.execute(sql)
@@ -1221,7 +1212,7 @@ def tambahstaf(page):
         if not staf:
             staf = False
         closeDb()
-        return render_template('admin/tambah_staf.html', count=counter, staf=staf, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('admin/tambah_staf.html', count=counter, staf=staf, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian)
     else:
         return redirect(url_for('index'))
 
@@ -1395,6 +1386,7 @@ def buku(page):
     if verifLogin(4):
         openDb()
         global lanjut, Stat
+        pencarian = ""
         prev = page - 1
         next = page + 1
         counter = prev*10
@@ -1414,7 +1406,8 @@ def buku(page):
             if request.form['search']:
                 # Searching dengan mencocokkan nama buku
                 try:
-                    sql = "SELECT isbn, namabuku, namapenulis, namapenerbit, tahunterbit FROM databuku WHERE isbn LIKE '%" + request.form['search'] + "%' OR namabuku LIKE '%" + request.form['search'] + "%' OR namapenulis LIKE '%" + request.form['search'] + "%' OR namapenerbit LIKE '%" + request.form['search'] + "%' OR tahunterbit LIKE '%" + request.form['search'] + "%' ORDER BY s.nama"
+                    pencarian = request.form['search']
+                    sql = "SELECT isbn, namabuku, namapenulis, namapenerbit, tahunterbit FROM databuku WHERE isbn LIKE '%" + request.form['search'] + "%' OR namabuku LIKE '%" + request.form['search'] + "%' OR namapenulis LIKE '%" + request.form['search'] + "%' OR namapenerbit LIKE '%" + request.form['search'] + "%' OR tahunterbit LIKE '%" + request.form['search'] + "%' ORDER BY namabuku"
                     cursor.execute(sql)
                     buku = cursor.fetchall()
                     lanjut = False
@@ -1426,30 +1419,142 @@ def buku(page):
         if not buku:
             buku = False
         closeDb()
-        return render_template('perpus/data_buku.html', count=counter, buku=buku, prev=prev, next=next, lanjut=lanjut, status=Stat)
+        return render_template('perpus/data_buku.html', count=counter, buku=buku, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian)
     else:
         return redirect(url_for('index'))
 
 @app.route('/dashboard_perpus/edit_buku/<id>', methods = ['GET', 'POST'])
 def editbuku(id):
     if verifLogin(4):
-        return render_template('perpus/edit_buku.html')
+        openDb()
+        # Status berhasil & error
+        global Stat
+        # Ambil data buku yang akan diedit
+        sql = "SELECT isbn, namabuku, namapenulis, namapenerbit, tahunterbit FROM databuku WHERE isbn = %s"
+        cursor.execute(sql, id)
+        data = cursor.fetchone()
+        # Jika user menekan tombol submit, maka mengumpulkan semua data yang ada di form untuk diedit
+        if request.method == 'POST':
+            try:
+                isbn = request.form['isbn']
+                judul = request.form['judul']
+                penulis = request.form['penulis']
+                penerbit = request.form['penerbit']
+                tahun = request.form['tahunterbit']
+                detail = (isbn, judul, penulis, penerbit, tahun, id)
+                # Update data buku
+                cursor.execute(
+                    'UPDATE databuku SET isbn = %s, namabuku = %s, namapenulis = %s, namapenerbit = %s, tahunterbit = %s WHERE isbn = %s',
+                    detail)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil diubah')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('buku'))
+        closeDb()
+        return render_template('perpus/edit_buku.html', data=data)
     else:
         return redirect(url_for('index'))
 
 @app.route('/dashboard_perpus/hapus_buku/<id>', methods = ['GET', 'POST'])
 def hapusbuku(id):
     if verifLogin(4):
-        return render_template('perpus/hapus_buku.html')
+        openDb()
+        global Stat
+        # Ambil data buku yang akan dihapus
+        cursor.execute('SELECT isbn, namabuku, namapenulis, namapenerbit, tahunterbit FROM databuku WHERE isbn = %s', (id))
+        data = cursor.fetchone()
+        # Jika user mengkonfirm hapusdata
+        if request.method == 'POST':
+            try:
+                cursor.execute('DELETE FROM databuku WHERE isbn = %s', (id))
+                conn.commit()
+                Stat = True
+                flash('Data berhasil dihapus')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('buku'))
+        closeDb()
+        return render_template('perpus/hapus_buku.html', data=data)
     else:
         return redirect(url_for('index'))
 
-@app.route('/dashboard_perpus/tambah_buku/<id>', methods = ['GET', 'POST'])
+@app.route('/dashboard_perpus/tambah_buku', methods = ['GET', 'POST'])
 def tambahbuku():
     if verifLogin(4):
+        openDb()
+        # Status berhasil & error
+        global Stat
+        # Jika user mengkonfirm tambah data buku
+        if request.method == 'POST':
+            try:
+                isbn = request.form['isbn']
+                judul = request.form['judulbuku']
+                penulis = request.form['penulis']
+                penerbit = request.form['penerbit']
+                tahun = request.form['tahunterbit']
+                detail = (isbn, judul, penulis, penerbit, tahun)
+                cursor.execute('INSERT INTO databuku VALUES (%s, %s, %s, %s, %s)', detail)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('buku'))
+        closeDb()
         return render_template('perpus/tambah_buku.html')
     else:
         return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/peminjaman/<status>', methods = ['GET', 'POST'], defaults={'page':1})
+@app.route('/dashboard_perpus/peminjaman/<status>/<int:page>', methods = ['GET', 'POST'])
+def peminjaman(status, page):
+    if verifLogin(4):
+        openDb()
+        global lanjut, Stat
+        pencarian = ""
+        prev = page - 1
+        next = page + 1
+        counter = prev*10
+        # Ambil daftar peminjaman dari database
+        sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis ORDER BY p.idpeminjaman"
+        cursor.execute(sql)
+        peminjamanAll = cursor.fetchall()
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        peminjaman = peminjamanAll[counter:page*10]
+        # Data slice halaman selanjutnya
+        nextPage = peminjamanAll[page*10:next*10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
+        if request.method == 'POST':
+            # Jika user melakukan searching
+            if request.form['search']:
+                try:
+                    pencarian = request.form['search']
+                    sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE s.nama LIKE '%" + request.form['search'] + "%' OR k.namakelas LIKE '%" + request.form['search'] + "%' OR b.namabuku LIKE '%" + request.form['search'] + "%' OR p.statuspinjam LIKE '%" + request.form['search'] + "%' OR p.tanggalpinjam LIKE '%" + request.form['search'] + "%' ORDER BY p.idpeminjaman"
+                    cursor.execute(sql)
+                    peminjaman = cursor.fetchall()
+                    lanjut = False
+                except Exception as err:
+                    Stat = False
+                    flash('Terjadi kesalahan')
+                    flash(err)
+        # Jika databasenya kosong
+        if not peminjaman:
+            peminjaman = False
+        closeDb()
+        return render_template('perpus/data_peminjaman.html', count=counter, peminjama=peminjaman, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian)
+    else:
+        return redirect(url_for('index'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

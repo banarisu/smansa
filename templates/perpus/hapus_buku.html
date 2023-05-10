@@ -1,10 +1,116 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% set title = 'Perpustakaan - Hapus Buku SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
 
-</body>
-</html>
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Perpustakaan</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_perpus" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Buku</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/buku">Data Buku</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/tambah_buku">Tambah Buku</a>
+                  </li>
+                  <li class="active">
+                      <a class="nav-link" href="#">Hapus Buku</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Peminjaman</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/peminjaman">Data Peminjaman</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/tambah_peminjaman">Peminjaman Baru</a>
+                  </li>
+              </ul>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Hapus Buku</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_perpus">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_perpus/buku">Data Buku</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Hapus Buku
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <div class="card mx-auto" style="width: 50%">
+                      <form action="/dashboard_perpus/hapus_buku/{{data[0]}}" method="post">
+                          <div class="col-12">
+                              <div class="card-body display-hapus">
+                              <div class="form-group">
+                                  <label>ISBN</label>
+                                  <p class="card-text">
+                                      {{data[0]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Judul Buku</label>
+                                  <p class="card-text">
+                                      {{data[1]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Nama Penulis</label>
+                                  <p class="card-text">
+                                      {{data[2]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Nama Penerbit</label>
+                                  <p class="card-text">
+                                      {{data[3]}}
+                                  </p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Tahun Terbit</label>
+                                  <p class="card-text">
+                                      {{data[4]}}
+                                  </p>
+                              </div>
+                          </div>
+                          </div>
+                          <div class="card-footer text-center">
+                              <p class="card-text" style="font-weight: bold">Anda yakin ingin menghapus buku ini?</p>
+                          </div>
+                          <div class="card-footer text-right">
+                              <button class="btn btn-primary" type="submit">Hapus</button>
+                              <a href="/dashboard_perpus/buku" class="btn btn-danger">Batal</a>
+                        </div>
+                      </form>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}
