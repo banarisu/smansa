@@ -1,10 +1,116 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% set title = 'Perpustakaan - Edit Peminjaman SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
 
-</body>
-</html>
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Perpustakaan</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_perpus" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Buku</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/buku">Data Buku</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/tambah_buku">Tambah Buku</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Peminjaman</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/peminjaman">Data Peminjaman</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/tambah_peminjaman">Peminjaman Baru</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/cetak_peminjaman">Cetak Peminjaman</a>
+                  </li>
+                  <li class="active">
+                      <a class="nav-link" href="#">Edit Peminjaman</a>
+                  </li>
+              </ul>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Edit Peminjaman</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_perpus">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_perpus/peminjaman">Data Peminjaman</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Edit Peminjaman
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                 <div class="card">
+                      <form action="/dashboard_perpus/edit_peminjaman/{{ id }}" method="post">
+                          <div class="card-body">
+                              <div class="form-group">
+                                  <label>Peminjam</label>
+                                  <input type="text" value="{{data[1]}}" name="peminjam" class="form-control" readonly>
+                              </div>
+                              <div class="form-group">
+                                  <label>Kelas</label>
+                                  <input type="text" value="{{data[2]}}" name="kelas" class="form-control" readonly>
+                              </div>
+                              <div class="form-group">
+                                  <label>Judul Buku</label>
+                                  <input type="text" value="{{ data[3] }}" name="judul" class="form-control" readonly>
+                              </div>
+                              <div class="form-group">
+                                  <label>Tanggal Pinjam</label>
+                                  <input type="date" value="{{ data[4] }}" name="tanggalpinjam" class="form-control" readonly>
+                              </div>
+                              <div class="form-group">
+                                  <label>Status</label>
+                                  <select class="form-control" name="status" id="status">
+                                  {% for x in listStatus %}
+                                    {% if data[5] == x[0] %}
+                                        <option selected>{{ x[0] }}</option>
+                                    {% else %}
+                                        <option>{{ x[0] }}</option>
+                                    {% endif %}
+                                  {% endfor %}
+                                  </select>
+                              </div>
+                               <div class="form-group">
+                                  <label>Tanggal Pengembalian / Hilang</label>
+                                  <input type="date" value="{{ data[6] }}" name="tanggalkembali" class="form-control" required>
+                              </div>
+                          </div>
+                          <div class="card-footer text-right">
+                              <button class="btn btn-primary" type="submit">Edit</button>
+                              <a href="/dashboard_perpus/peminjaman" class="btn btn-danger">Batal</a>
+                        </div>
+                      </form>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

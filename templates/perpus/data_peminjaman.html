@@ -35,6 +35,9 @@
                   <li>
                       <a class="nav-link" href="/dashboard_perpus/tambah_peminjaman">Peminjaman Baru</a>
                   </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_perpus/cetak_peminjaman">Cetak Peminjaman</a>
+                  </li>
               </ul>
             </li>
         </ul>
@@ -85,6 +88,16 @@
                     {% endif %}
                   {% endif %}
                   {% endwith %}
+                  <div class="dropdown d-inline mr-2">
+                      <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownStatus" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          {{ statuspinjam }}
+                      </button>
+                      <div class="dropdown-menu" id="statuspinjaman" x-placement="bottom-start" style="position: absolute; transform: translate3d(0px, 29px, 0px); top: 0px; left: 0px; will-change: transform;">
+                          {% for x in listStatus %}
+                          <a class="dropdown-item" href="/dashboard_perpus/peminjaman/{{x[0]}}/1">{{x[0]}}</a>
+                          {% endfor %}
+                      </div>
+                  </div>
                   <form class="form-inline mr-auto" style="margin: 10px" method="POST">
                       <div class="search-element">
                           <input class="form-control" type="text" name="search" placeholder="Cari peminjaman di sini" value="{{pencarian}}" data-width="250" style="width: 250px;">
@@ -102,38 +115,48 @@
                               <th class="text-light">Judul Buku</th>
                               <th class="text-light">Tanggal Pinjam</th>
                               <th class="text-light">Status Pinjam</th>
+                              {% if statuspinjam == "Dikembalikan" %}
+                              <th class="text-light">Tanggal Pengembalian</th>
+                              {% endif %}
                               <th class="text-light">Aksi</th>
                           </tr>
                       </thead>
                       <tbody>
-                      <!-- Jika tabel buku tidak kosong, maka tampilkan... -->
-                      {% if buku is not false %}
+                      <!-- Jika tabel peminjaman tidak kosong, maka tampilkan... -->
+                      {% if peminjaman is not false %}
                       <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
-                      {% for data in buku %}
+                      {% for data in peminjaman %}
                           <tr>
                               {% set x = count+loop.index %}
                               <td>{{ x }}</td>
-                              <td>{{ data[0] }}</td>
                               <td>{{ data[1] }}</td>
                               <td>{{ data[2] }}</td>
                               <td>{{ data[3] }}</td>
                               <td>{{ data[4] }}</td>
+                              <td>{{ data[5] }}</td>
+                              {% if statuspinjam == "Dikembalikan" %}
+                              <td>{{ data[6] }}</td>
+                              {% endif %}
                               <td>
                                   <div class="btn-group mb-3" role="group">
-                                      <a href="/dashboard_perpus/edit_buku/{{data[0]}}" class="btn btn-icon btn-warning">
+                                      <a href="/dashboard_perpus/edit_peminjaman/{{data[0]}}" class="btn btn-icon btn-warning">
                                           <i class="far fa-edit"></i>
                                       </a>
-                                      <a href="/dashboard_perpus/hapus_buku/{{data[0]}}" class="btn btn-icon btn-danger">
+                                      <a href="/dashboard_perpus/hapus_peminjaman/{{data[0]}}" class="btn btn-icon btn-danger">
                                           <i class="fas fa-times"></i>
                                       </a>
                                   </div>
                               </td>
                           </tr>
                       {% endfor %}
-                      <!-- Namun jika tabel siswa kosong -->
+                      <!-- Namun jika tabel peminjaman kosong -->
                       {% else %}
                           <tr>
+                              {% if statuspinjam == "Dikembalikan" %}
+                              <td colspan="8">Data tidak ditemukan</td>
+                              {% else %}
                               <td colspan="7">Data tidak ditemukan</td>
+                              {% endif %}
                           </tr>
                       {% endif %}
                       </tbody>

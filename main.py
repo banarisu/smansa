@@ -598,9 +598,12 @@ def editkelas(kode):
                 cursor.execute('SELECT nuptk FROM guru WHERE nama = %s', namawali)
                 kodeguru = cursor.fetchone()
                 info = (kodekelas, namakelas, kodeguru[0], kode)
-                print(info)
                 # Update data kelas
                 cursor.execute('UPDATE kelas SET kelas = %s, namakelas = %s, walikelas = %s WHERE kelas = %s', info)
+                conn.commit()
+                # Update data rombel
+                info2 = (kodekelas, kode)
+                cursor.execute('UPDATE rombel SET kelas = %s WHERE kelas = %s', info2)
                 conn.commit()
                 Stat = True
                 flash('Data berhasil diubah')
@@ -627,6 +630,8 @@ def hapuskelas(kode):
             try:
                 cursor.execute('DELETE FROM kelas WHERE kelas = %s', (kode))
                 conn.commit()
+                # Meskipun data kelas di hapus,
+                # Data rombel tidak perlu dihapus, sehingga ketika ditambahkan kembali data anggota kelasnya masih ada
                 '''cursor.execute('DELETE FROM rombel WHERE kelas = %s', (kode))
                 conn.commit()'''
                 Stat = True
@@ -1271,7 +1276,96 @@ def guru():
         dow = tanggal.isoweekday()
         # numHari = hari
         numHari = cekHari(dow)
-        return render_template('guru/dashboard_guru.html', hari=numHari, tanggal=dt)
+
+        # Fetch data dari guru yang login
+        sql = "SELECT nuptk, nama FROM guru WHERE nuptk = %s"
+        cursor.execute(sql, session['id'])
+        guru = cursor.fetchone()
+
+        # Fetch data jadwal hari ini
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, k.namakelas FROM jadwal j LEFT JOIN kelas k ON j.kelas = k.kelas LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.pengajar = %s AND j.hari = %s ORDER BY j.jam"
+        temp = (guru[0], numHari)
+        cursor.execute(sql, temp)
+        jadwal = cursor.fetchall()
+
+        # Jika jadwal kelas tersebut kosong
+        if not jadwal:
+            jadwal = False;
+        return render_template('guru/dashboard_guru.html', hari=numHari, tanggal=dt, jadwal=jadwal, guru=guru)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/data_absensi', methods = ['GET', 'POST'])
+def dataAbsensi():
+    if verifLogin(2):
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+        return render_template('guru/data_absensi.html', hari=numHari)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/cek_absensi/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def cekAbsensi(mapel, kelas):
+    if verifLogin(2):
+        return render_template('guru/detail_absensi.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/edit_absensi/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def editAbsensi(mapel, kelas):
+    if verifLogin(2):
+        return render_template('guru/edit_absensi.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/hapus_absensi/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def hapusAbsensi(mapel, kelas):
+    if verifLogin(2):
+        return render_template('guru/hapus_absensi.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/data_nilai', methods = ['GET', 'POST'])
+def dataNilai(mapel, kelas):
+    if verifLogin(2):
+        return render_template('guru/data_nilai.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/edit_absensi/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def cekNilai(mapel, kelas):
+    if verifLogin(2):
+        return render_template('guru/detail_nilai.html')
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/jadwal/<id>/<hari>', methods = ['GET', 'POST'])
+def jadwalGuru(id, hari):
+    if verifLogin(2):
+        openDb()
+        global Stat
+        # Ambil data guru yang login
+        sql = "SELECT nuptk, nama FROM guru WHERE nuptk = %s"
+        cursor.execute(sql, id)
+        guru = cursor.fetchone()
+
+        # Ambil data jadwal menurut guru yang login
+        sql = "SELECT j.jam, DATE_ADD(j.jam, interval 45 minute), j.mapel, p.namamapel, k.namakelas FROM jadwal j LEFT JOIN kelas k ON j.kelas = k.kelas LEFT JOIN mapel p ON j.mapel = p.kodemapel WHERE j.pengajar = %s AND j.hari = %s ORDER BY j.jam"
+        detail = (id, hari)
+        cursor.execute(sql, detail)
+        jadwal = cursor.fetchall()
+
+        # Ambil daftar hari belajar
+        sql = "SELECT * FROM haribelajar ORDER BY hari DESC"
+        cursor.execute(sql)
+        listHari = cursor.fetchall()
+
+        # Jika jadwal kelas tersebut kosong
+        if not jadwal:
+            jadwal = False;
+        return render_template('guru/jadwal_guru.html', jadwal=jadwal, listHari=listHari, guru=guru, hari=hari)
     else:
         return redirect(url_for('index'))
 
@@ -1315,7 +1409,6 @@ def jadwalSiswa(kelas, hari):
     if verifLogin(3):
         openDb()
         global Stat
-        tambah = True
         # Ambil nama kelas dari kode kelas
         sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
         cursor.execute(sql, kelas)
@@ -1513,18 +1606,21 @@ def tambahbuku():
     else:
         return redirect(url_for('index'))
 
-@app.route('/dashboard_perpus/peminjaman/<status>', methods = ['GET', 'POST'], defaults={'page':1})
-@app.route('/dashboard_perpus/peminjaman/<status>/<int:page>', methods = ['GET', 'POST'])
+@app.route('/dashboard_perpus/peminjaman', methods = ['GET', 'POST'], defaults={'page':1, 'status':"Dipinjam"})
+@app.route('/dashboard_perpus/peminjaman/<string:status>/<int:page>', methods = ['GET', 'POST'])
 def peminjaman(status, page):
     if verifLogin(4):
         openDb()
         global lanjut, Stat
+        listStatus = (['Dipinjam'], ['Dikembalikan'])
         pencarian = ""
         prev = page - 1
         next = page + 1
         counter = prev*10
         # Ambil daftar peminjaman dari database
-        sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis ORDER BY p.idpeminjaman"
+        sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE p.statuspinjam = 'Dipinjam' ORDER BY p.idpeminjaman"
+        if status == "Dikembalikan":
+            sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE p.statuspinjam = 'Dikembalikan' OR p.statuspinjam = 'Rusak' OR p.statuspinjam = 'Hilang' ORDER BY p.idpeminjaman"
         cursor.execute(sql)
         peminjamanAll = cursor.fetchall()
         # Slice data yang akan ditampilkan sebanyak 10 baris
@@ -1539,7 +1635,14 @@ def peminjaman(status, page):
             if request.form['search']:
                 try:
                     pencarian = request.form['search']
-                    sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE s.nama LIKE '%" + request.form['search'] + "%' OR k.namakelas LIKE '%" + request.form['search'] + "%' OR b.namabuku LIKE '%" + request.form['search'] + "%' OR p.statuspinjam LIKE '%" + request.form['search'] + "%' OR p.tanggalpinjam LIKE '%" + request.form['search'] + "%' ORDER BY p.idpeminjaman"
+                    sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE s.nama LIKE '%" + request.form['search'] + "%' OR k.namakelas LIKE '%" + request.form['search'] + "%' OR b.namabuku LIKE '%" + request.form['search'] + "%' OR p.statuspinjam LIKE '%" + request.form['search'] + "%' OR p.tanggalpinjam LIKE '%" + request.form['search'] + "%' AND p.statuspinjam = 'Dipinjam' ORDER BY p.idpeminjaman"
+                    if status == 'Dikembalikan':
+                        sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE s.nama LIKE '%" + \
+                              request.form['search'] + "%' OR k.namakelas LIKE '%" + request.form[
+                                  'search'] + "%' OR b.namabuku LIKE '%" + request.form[
+                                  'search'] + "%' OR p.statuspinjam LIKE '%" + request.form[
+                                  'search'] + "%' OR p.tanggalpinjam LIKE '%" + request.form[
+                                  'search'] + "%' AND p.statuspinjam = 'Dikembalikan' OR p.statuspinjam = 'Hilang' OR p.statuspinjam = 'Rusak' ORDER BY p.idpeminjaman"
                     cursor.execute(sql)
                     peminjaman = cursor.fetchall()
                     lanjut = False
@@ -1551,10 +1654,112 @@ def peminjaman(status, page):
         if not peminjaman:
             peminjaman = False
         closeDb()
-        return render_template('perpus/data_peminjaman.html', count=counter, peminjama=peminjaman, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian)
+        return render_template('perpus/data_peminjaman.html', statuspinjam=status, count=counter, peminjaman=peminjaman, prev=prev, next=next, lanjut=lanjut, status=Stat, pencarian=pencarian, listStatus=listStatus)
     else:
         return redirect(url_for('index'))
 
+@app.route('/dashboard_perpus/edit_peminjaman/<id>', methods = ['GET', 'POST'])
+def editpeminjaman(id):
+    if verifLogin(4):
+        openDb()
+        global Stat
+        listStatus = (['Dikembalikan'], ['Rusak'], ['Hilang'])
+        # Ambil data peminjaman yang akan diedit
+        sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE p.idpeminjaman = %s"
+        cursor.execute(sql, id)
+        peminjaman = cursor.fetchone()
+        if request.method == 'POST':
+            try:
+                statuspinj = request.form['status']
+                tanggalkemb = request.form['tanggalkembali']
+                # Update data peminjaman
+                info = (statuspinj, tanggalkemb, id)
+                cursor.execute('UPDATE peminjamanbuku SET statuspinjam = %s, tanggalpengembalian = %s WHERE idpeminjaman = %s', info)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil diubah')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('peminjaman'))
+        closeDb()
+        return render_template('perpus/edit_peminjaman.html', id=id, data=peminjaman, listStatus=listStatus)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/hapus_peminjaman/<id>', methods = ['GET', 'POST'])
+def hapuspeminjaman(id):
+    if verifLogin(4):
+        openDb()
+        global Stat
+        # Ambil data peminjaman yang akan dihapus
+        sql = "SELECT p.idpeminjaman, s.nama, k.namakelas, b.namabuku, p.tanggalpinjam, p.statuspinjam, p.tanggalpengembalian FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis WHERE p.idpeminjaman = %s"
+        cursor.execute(sql, id)
+        data = cursor.fetchone()
+        # Jika user mengkonfirm hapusdata
+        if request.method == 'POST':
+            try:
+                cursor.execute('DELETE FROM peminjamanbuku WHERE idpeminjaman = %s', id)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil dihapus')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('peminjaman'))
+        closeDb()
+        return render_template('perpus/hapus_peminjaman.html', data=data)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/tambah_peminjaman', methods = ['GET', 'POST'])
+def tambahpeminjaman():
+    if verifLogin(4):
+        openDb()
+        # Status berhasil & error
+        global Stat
+        # Ambil daftar siswa
+        sql = "SELECT s.nis, s.nama, k.namakelas FROM siswa s LEFT JOIN rombel r ON s.nis = r.anggota LEFT JOIN kelas k ON k.kelas = r.kelas ORDER BY s.nama"
+        cursor.execute(sql)
+        siswa = cursor.fetchall()
+        # Ambil daftar buku
+        sql = "SELECT isbn, namabuku FROM databuku ORDER BY namabuku"
+        cursor.execute(sql)
+        buku = cursor.fetchall()
+        # Jika user mengkonfirm tambah data peminjaman
+        if request.method == 'POST':
+            try:
+                peminjam = request.form.get('peminjam')
+                buku = request.form.get('buku')
+                cursor.execute('SELECT kelas from rombel WHERE anggota = %s', peminjam)
+                kls = cursor.fetchone()
+                tanggal = request.form['tanggalpinjam']
+                detail = (peminjam, kls[0], buku, tanggal, 'Dipinjam')
+                cursor.execute('INSERT INTO peminjamanbuku VALUES (NULL, %s, %s, %s, %s, %s, NULL)', detail)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            return redirect(url_for('peminjaman'))
+        closeDb()
+        return render_template('perpus/tambah_peminjaman.html', siswa=siswa, buku=buku)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_perpus/cetak_peminjaman', methods = ['GET', 'POST'])
+def cetakpeminjaman():
+    if verifLogin(4):
+        openDb()
+
+        closeDb()
+        return render_template('perpus/cetak_pinjam.html')
+    else:
+        return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
