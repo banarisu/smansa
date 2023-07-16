@@ -19,7 +19,7 @@
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
               <ul class="dropdown-menu">
                   <li>
-                      <a class="nav-link" href="/dashboard_guru">Cek Absensi</a>
+                      <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
                   </li>
                   <li>
                       <a class="nav-link" href="/dashboard_guru">Absensi Baru</a>
@@ -47,7 +47,7 @@
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a href="/dashboard_guru/jadwal/{{guru[0]}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+              <a href="/dashboard_guru/jadwal/{{session.id}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
             </li>
         </ul>
     </aside>
@@ -71,7 +71,7 @@
                           <table class="table table-hover table-striped table-bordered text-center" style="margin-top: 10px">
                               <thead class="bg-primary">
                               <tr>
-                                  <th class="text-light">Jam Belajar</th>
+                                  <th class="text-light">Jam Mengajar</th>
                                   <th class="text-light">Mata Pelajaran</th>
                                   <th class="text-light">Kelas</th>
                               </tr>

@@ -1,10 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% set title = 'Guru - Data Absensi SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
 
-</body>
-</html>
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Guru</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_guru" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
+              <ul class="dropdown-menu">
+                  <li class="active">
+                      <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Absensi Baru</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai Tugas</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai Praktek</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai Ujian</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai UTS/UAS</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Cetak</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_guru/jadwal/{{session.id}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+{% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1 href="/dashboard_guru">Data Absensi Kelas {{kls[1]}} / Mata Pelajaran {{map[1]}}</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_guru">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Data Absensi
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <table class="table table-hover table-striped table-bordered text-center live-search-list">
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">No</th>
+                              <th class="text-light">Hari Tanggal</th>
+                              <th class="text-light">Aksi</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel siswa tidak kosong, maka tampilkan... -->
+                      {% if absensi is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in absensi %}
+                      {% for hari in hariAbsen %}
+                          <tr>
+                              {% set x = count+loop.index %}
+                              <td>{{ x }}</td>
+                              <td>{{ hari }} / {{ data[1] }}</td>
+                              <td>
+                                  <div class="btn-group mb-3" role="group">
+                                      <a href="/dashboard_guru/edit_absensi/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-warning">
+                                          <i class="far fa-edit"></i>
+                                      </a>
+                                      <a href="/dashboard_guru/hapus_absensi/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-danger">
+                                          <i class="fas fa-times"></i>
+                                      </a>
+                                  </div>
+                              </td>
+                          </tr>
+                      {% endfor %}
+                      {% endfor %}
+                      <!-- Namun jika tabel data absensi kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="3">Belum ada data absensi</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+                  </table>
+                  <div class="buttons">
+                      <nav>
+                          <ul class="pagination">
+                              {% if prev < 1 %}
+                              <li class="page-item disabled">
+                                  <a class="page-link" href="{{ url_for('dataAbsensi', mapel=map[0], kelas=kls[0], page=prev) }}" aria-label="Previous">
+                                      <span aria-hidden="true">«Prev</span>
+                                      <span class="sr-only">Previous</span>
+                                  </a>
+                              </li>
+                              {% else %}
+                              <li class="page-item">
+                                  <a class="page-link" href="{{ url_for('dataAbsensi', mapel=map[0], kelas=kls[0], page=prev) }}" aria-label="Previous">
+                                      <span aria-hidden="true">«Prev</span>
+                                      <span class="sr-only">Previous</span>
+                                  </a>
+                              </li>
+                              {% endif %}
+                              {% if lanjut is false %}
+                              <li class="page-item disabled">
+                                  <a class="page-link" href="{{ url_for('dataAbsensi', mapel=map[0], kelas=kls[0], page=next) }}" aria-label="Next">
+                                      <span aria-hidden="true">Next»</span>
+                                      <span class="sr-only">Next</span>
+                                  </a>
+                              </li>
+                              {% else %}
+                              <li class="page-item">
+                                  <a class="page-link" href="{{ url_for('dataAbsensi', mapel=map[0], kelas=kls[0], page=next) }}" aria-label="Next">
+                                      <span aria-hidden="true">Next»</span>
+                                      <span class="sr-only">Next</span>
+                                  </a>
+                              </li>
+                              {% endif %}
+                          </ul>
+                      </nav>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

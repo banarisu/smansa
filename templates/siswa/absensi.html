@@ -1,0 +1,89 @@
+{% set title = 'Siswa - Absensi Siswa SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
+
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Siswa</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_siswa" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="/dashboard_siswa/cek_absen" class="nav-link"><i class="fas fa-user"></i><span>Cek Absensi</span></a>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_siswa">Nilai Tugas</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_siswa">Nilai Praktek</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_siswa">Nilai Ujian</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_siswa">Nilai UTS/UAS</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_siswa">Nilai Raport</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_siswa/jadwal/{{kelas[0]}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1 href="/dashboard_siswa">Cek Absensi Siswa</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_siswa">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Absensi Siswa
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <div class="card">
+                      <div class="card-body">
+                      <div id="accordion">
+                        <div class="accordion">
+                            <div class="accordion-header" role="button" data-toggle="collapse" data-target="#mapels" aria-expanded="false" style="">
+                                <h4>Pilih Mata Pelajaran</h4>
+                            </div>
+                            <div class="accordion-body collapse" id="mapels" data-parent="#accordion">
+                                <ul class="nav flex-column">
+                                {% for map in mapel %}
+                                <li>
+                                    <a class="nav-link" href="/dashboard_siswa/absen/{{map[0]}}">{{map[0]}}/{{map[1]}}</a>
+                                </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                      </div>
+                      </div>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

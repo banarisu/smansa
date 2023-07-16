@@ -1,4 +1,4 @@
-{% set title = 'Guru - Dashboard SMA Negeri 1 Belinyu' %}
+{% set title = 'Guru - Cek Absensi SMA Negeri 1 Belinyu' %}
 {% extends "master/base.html" %}
 
 {% block sidebar %}
@@ -19,7 +19,7 @@
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
               <ul class="dropdown-menu">
                   <li class="active">
-                      <a class="nav-link" href="/dashboard_guru">Cek Absensi</a>
+                      <a class="nav-link" href="#">Cek Absensi</a>
                   </li>
                   <li>
                       <a class="nav-link" href="/dashboard_guru">Absensi Baru</a>
@@ -47,9 +47,64 @@
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a href="/dashboard_guru/jadwal/{{guru[0]}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+              <a href="/dashboard_guru/jadwal/{{session.id}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
             </li>
         </ul>
     </aside>
   </div>
   {% endblock sidebar %}
+
+{% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1 href="/dashboard_guru">Cek Absensi Kelas</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_guru">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Data Absensi
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <div class="card">
+                      <div class="card-header">
+                          <h4>Pilih Kelas dan Mata Pelajaran</h4>
+                      </div>
+                      <div class="card-body">
+                      {% if kls is not false %}
+                      <div id="accordion">
+                      {% for x in kls %}
+                        <div class="accordion">
+                            <div class="accordion-header" role="button" data-toggle="collapse" data-target="#{{x[0]}}" aria-expanded="false" style="">
+                                <h4>{{x[1]}}</h4>
+                            </div>
+                            <div class="accordion-body collapse" id="{{x[0]}}" data-parent="#accordion">
+                                <ul class="nav flex-column">
+                                {% for map in mapel %}
+                                {% if map[0] == x[0] %}
+                                <li>
+                                    <a class="nav-link" href="/dashboard_guru/data_absensi/{{map[1]}}/{{map[0]}}">{{map[1]}}/{{map[2]}}</a>
+                                </li>
+                                {% endif %}
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                      {% endfor %}
+                      </div>
+                      {% else %}
+                        <li class="nav-item">
+                            <h5 class="text-dark">Anda belum memiliki kelas yang diajar</h5>
+                        </li>
+                      {% endif %}
+                      </div>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}
