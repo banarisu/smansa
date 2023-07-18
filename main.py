@@ -918,7 +918,7 @@ def addjadwal(kode, hari):
                 flash('Terjadi kesalahan')
                 flash(err)
             closeDb()
-            return (redirect(url_for('jadwal', kode=kode, hari=hari)))
+            return redirect(url_for('jadwal', kode=kode, hari=hari))
         return render_template('admin/jadwal_baru.html', kelas=kls, hari=hari, jam=jam, mapel=mapel, guru=guru)
     else:
         return redirect(url_for('index'))
@@ -1383,13 +1383,13 @@ def dataAbsensi(mapel, kelas, page):
         cursor.execute(sql, mapel)
         matapel = cursor.fetchone()
         # Ambil data absensi yang ada
-        sql = "SELECT DISTINCT dayofweek(tanggal), tanggal FROM presensi WHERE mapel = %s AND kelas = %s"
+        sql = "SELECT DISTINCT WEEKDAY(tanggal), tanggal FROM presensi WHERE mapel = %s AND kelas = %s"
         mapelKelas = (matapel[0], kls[0])
         cursor.execute(sql, mapelKelas)
         absensiAll = cursor.fetchall()
         hariAbsen = []
-        for x in absensiAll:
-            hariAbsen.append(cekHari(x[0]))
+        for x in range(1, 8):
+            hariAbsen.append(cekHari(x))
         print(hariAbsen)
         # Slice data yang akan ditampilkan sebanyak 10 baris
         absensi = absensiAll[counter:page * 10]
@@ -1400,7 +1400,7 @@ def dataAbsensi(mapel, kelas, page):
             lanjut = False
         if not absensi:
             absensi = False
-        return render_template('guru/detail_absensi.html', count=counter, hari=numHari, map=matapel, kls=kls, prev=prev, next=next, absensi=absensi, lanjut=lanjut, hariAbsen=hariAbsen)
+        return render_template('guru/detail_absensi.html', count=counter, hari=numHari, map=matapel, kls=kls, prev=prev, next=next, absensi=absensi, lanjut=lanjut, hariAbsen=hariAbsen, status=Stat)
     else:
         return redirect(url_for('index'))
 
@@ -1432,6 +1432,93 @@ def hapusAbsensi(mapel, kelas, tgl):
         numHari = cekHari(dow)
 
         return render_template('guru/hapus_absensi.html', hari=numHari)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/absensi_baru', methods = ['GET', 'POST'])
+def absensiBaru():
+    if verifLogin(2):
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil daftar kelas yang diajar
+        sql = "SELECT DISTINCT j.kelas, k.namakelas FROM jadwal j LEFT JOIN kelas k ON j.kelas = k.kelas WHERE j.pengajar = %s"
+        cursor.execute(sql, session['id'])
+        kelas = cursor.fetchall()
+
+        # Ambil daftar mapel yang diajar
+        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
+        cursor.execute(sql, session['id'])
+        mapel = cursor.fetchall()
+
+        if request.method == 'POST':
+            try:
+                kls = request.form.get('kelas')
+                mpl = request.form.get('mapel')
+                tgl = request.form.get('tanggal')
+                closeDb()
+                return redirect(url_for('tambahAbsensi', kelas=kls, mapel=mpl, tgl=tgl))
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+                closeDb()
+            return redirect(url_for('cekAbsensi'))
+
+        return render_template('guru/absensi_baru.html', hari=numHari, kelas=kelas, mapel=mapel)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/tambah_absensi/<mapel>/<kelas>/<tgl>', methods = ['GET', 'POST'])
+def tambahAbsensi(kelas, mapel, tgl):
+    if verifLogin(2):
+        global Stat, siswa
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data murid di kelas tersebut
+        sql = "SELECT r.anggota, s.nama FROM rombel r LEFT JOIN siswa s ON r.anggota = s.nis WHERE r.kelas = %s"
+        cursor.execute(sql, kelas)
+        siswa = cursor.fetchall()
+        if request.method == 'POST':
+            try:
+                listTemp = []
+                jml = request.form['jumlahSiswa']
+                print("Jumlah siswa:"+jml)
+                print(mapel)
+                print(kelas)
+                print(tgl)
+                for i in range(1, int(jml)+1):
+                    nis = request.form['nis'+str(i)]
+                    status = request.form['status'+str(i)]
+                    temp = (mapel, nis, kelas, tgl, status)
+                    listTemp.append(temp)
+                print(listTemp)
+                sql = "INSERT INTO presensi VALUES (%s, %s, %s, %s, %s)"
+                cursor.executemany(sql, listTemp)
+                conn.commit()
+
+                Stat = True
+                flash('Data berhasil ditambahkan')
+                closeDb()
+                return redirect(url_for('dataAbsensi', mapel=mapel, kelas=kelas, page=1))
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+                closeDb()
+            return redirect(url_for('cekAbsensi'))
+
+        return render_template('guru/tambah_absensi.html', hari=numHari, kelas=kls, mapel=mapel, tgl=tgl, siswa=siswa)
     else:
         return redirect(url_for('index'))
 

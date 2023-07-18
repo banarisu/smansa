@@ -1,4 +1,4 @@
-{% set title = 'Guru - Tambah Absensi SMA Negeri 1 Belinyu' %}
+{% set title = 'Guru - Absensi Baru SMA Negeri 1 Belinyu' %}
 {% extends "master/base.html" %}
 
 {% block sidebar %}
@@ -22,7 +22,7 @@
                       <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
                   </li>
                   <li class="active">
-                      <a class="nav-link" href="/dashboard_guru/absensi_baru">Absensi Baru</a>
+                      <a class="nav-link" href="#">Absensi Baru</a>
                   </li>
               </ul>
             </li>
@@ -68,49 +68,45 @@
                           <a href="/dashboard_guru/cek_absensi">Data Absensi</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Tambah Absensi
+                          Absensi Baru
                       </div>
                   </div>
               </div>
               <div class="section-body">
-
                   <div class="card">
-                      <form action="/dashboard_guru/tambah_absensi/{{mapel}}/{{kelas[0]}}/{{tgl}}" method="post">
+                      <form action="/dashboard_guru/absensi_baru" method="post">
                           <div class="card-header">
-                              <h4>Absensi Kelas {{kelas[1]}} / Mata Pelajaran {{mapel}} / {{hari}} {{tgl}}</h4>
+                              <h4>Tambah Absensi Baru</h4>
                           </div>
-                          <div class="card-body">
-                              <!-- Looping data absensi siswa pada kelas bersangkutan -->
-                              <input type="hidden" name="jumlahSiswa" value="{{ siswa|length }}"/>
-                              {% for data in siswa %}
-                              {% set x = loop.index %}
-                              <div class="form-row">
-                                  <div class="form-group col-md-6">
-                                      <input type="hidden" name="nis{{ x }}" value="{{ data[0] }}"/>
-                                      <p>{{data[0]}} / {{data[1]}}</p>
-                                  </div>
-                                  <div class="form-group col-md-6">
-                                      <select class="form-control" name="status{{ x }}" required>
-                                          <option selected value="Hadir">Hadir</option>
-                                          <option value="Izin">Izin</option>
-                                          <option value="Sakit">Sakit</option>
-                                          <option value="Alpha">Tidak ada keterangan</option>
-                                      </select>
-                                  </div>
+                          <div class="card-body pb-0">
+                              <div class="form-group">
+                                  <label>Kelas</label>
+                                  <select class="form-control" name="kelas" id="kelas" required>
+                                      <option selected value="">Pilih kelas</option>
+                                  {% for x in kelas %}
+                                        <option value="{{ x[0] }}">{{ x[1] }}</option>
+                                  {% endfor %}
+                                  </select>
                               </div>
-                              {% endfor %}
+                              <div class="form-group">
+                                  <label>Mapel</label>
+                                  <select class="form-control" name="mapel" id="mapel" required>
+                                      <option selected value="">Pilih mata pelajaran</option>
+                                  {% for x in mapel %}
+                                        <option value="{{ x[1] }}">{{ x[1] }} / {{ x[2] }}</option>
+                                  {% endfor %}
+                                  </select>
+                              </div>
+                              <div class="form-group">
+                                  <label>Tanggal</label>
+                                  <input type="date" class="form-control datepicker" name="tanggal" id="tgl" required>
+                              </div>
                           </div>
                           <div class="card-footer text-center">
                               <button class="btn btn-primary" type="submit">Tambah</button>
                               <a href="/dashboard_guru/cek_absensi" class="btn btn-danger">Batal</a>
-                          </div>
+                        </div>
                       </form>
-                      <script>
-                      $(document).ready(function(){
-                        name: "item_"+count_item}).appendTo("#products").wrap($("<div/>"));
-                        });
-                        })
-        </script>
                   </div>
               </div>
           </section>
