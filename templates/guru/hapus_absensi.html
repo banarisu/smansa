@@ -1,10 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% set title = 'Guru - Hapus Absensi SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
 
-</body>
-</html>
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Guru</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_guru" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru/absensi_baru">Absensi Baru</a>
+                  </li>
+                  <li class="active">
+                      <a class="nav-link" href="#">Hapus Absensi</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai Tugas</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai Praktek</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai Ujian</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Nilai UTS/UAS</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru">Cetak</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_guru/jadwal/{{session.id}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+{% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Hapus Data Absensi</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_guru">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Hapus Absensi
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <div class="card mx-auto" style="width: 50%">
+                      <form action="/dashboard_guru/hapus_absensi/{{mapel}}/{{kelas}}/{{tgl}}" method="post">
+                          <div class="card-header">
+                              <h4>Hapus Absensi</h4>
+                          </div>
+                          <div class="card-body">
+                              <div class="form-group">
+                                  <label>Kelas</label>
+                                  <p class="card-text">{{ kls[1] }}</p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Mapel</label>
+                                  <p class="card-text">{{ mapel }} / {{ matapel[1] }}</p>
+                              </div>
+                              <div class="form-group">
+                                  <label>Tanggal</label>
+                                  <p class="card-text">{{ hariAbsen }} / {{ tgl }}</p>
+                              </div>
+                          </div>
+                          <div class="card-footer text-center">
+                              <p class="card-text" style="font-weight: bold">Anda yakin ingin menghapus data ini?</p>
+                          </div>
+                          <div class="card-footer text-center">
+                              <button class="btn btn-primary" type="submit">Hapus</button>
+                              <a href="/dashboard_guru/data_absensi/{{mapel}}/{{kelas}}" class="btn btn-danger">Batal</a>
+                        </div>
+                      </form>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

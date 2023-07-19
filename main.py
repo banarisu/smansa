@@ -1367,7 +1367,6 @@ def dataAbsensi(mapel, kelas, page):
     if verifLogin(2):
         openDb()
         global Stat, lanjut
-        pencarian = ""
         prev = page - 1
         next = page + 1
         counter = prev * 10
@@ -1390,7 +1389,6 @@ def dataAbsensi(mapel, kelas, page):
         hariAbsen = []
         for x in range(1, 8):
             hariAbsen.append(cekHari(x))
-        print(hariAbsen)
         # Slice data yang akan ditampilkan sebanyak 10 baris
         absensi = absensiAll[counter:page * 10]
         # Data slice halaman selanjutnya
@@ -1419,7 +1417,32 @@ def editAbsensi(mapel, kelas, tgl):
         cursor.execute(sql, mapelas)
         absensiKelas = cursor.fetchall()
 
-        return render_template('guru/edit_absensi.html', hari=numHari, absensi=absensiKelas, mapel=mapel, kelas=kelas, tgl=tgl)
+        # Ambil daftar opsi status presensi
+        sql = "SELECT * FROM statuspresensi"
+        cursor.execute(sql)
+        statAbsensi = cursor.fetchall()
+
+        if request.method == 'POST':
+            try:
+                jml = request.form['jumlahSiswa']
+                for i in range(1, int(jml)+1):
+                    nis = request.form['nis'+str(i)]
+                    status = request.form['status'+str(i)]
+                    temp = (status, nis, kelas, mapel, tgl)
+                    sql = "UPDATE presensi SET status = %s WHERE siswa = %s AND kelas = %s AND mapel = %s AND tanggal = %s"
+                    cursor.execute(sql, temp)
+                    conn.commit()
+                Stat = True
+                flash('Data berhasil diubah')
+                closeDb()
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+                closeDb()
+            return redirect(url_for('dataAbsensi', mapel=mapel, kelas=kelas, page=1))
+
+        return render_template('guru/edit_absensi.html', hari=numHari, absensi=absensiKelas, statAbsen=statAbsensi, mapel=mapel, kelas=kelas, tgl=tgl)
     else:
         return redirect(url_for('index'))
 
@@ -1431,7 +1454,33 @@ def hapusAbsensi(mapel, kelas, tgl):
         dow = tanggal.isoweekday()
         numHari = cekHari(dow)
 
-        return render_template('guru/hapus_absensi.html', hari=numHari)
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+        # Data hari/tanggal absen
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariAbsen = cekHari(nhari.isoweekday())
+        if request.method == 'POST':
+            try:
+                sql = "DELETE FROM presensi WHERE kelas = %s AND mapel = %s AND tanggal = %s"
+                temp = (kelas, mapel, tgl)
+                cursor.execute(sql, temp)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil dihapus')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('dataAbsensi', mapel=mapel, kelas=kelas, page=1))
+
+        return render_template('guru/hapus_absensi.html', hari=numHari, kelas=kelas, mapel=mapel, tgl=tgl, kls=kls, matapel=matapel, hariAbsen=hariAbsen)
     else:
         return redirect(url_for('index'))
 
@@ -1493,16 +1542,11 @@ def tambahAbsensi(kelas, mapel, tgl):
             try:
                 listTemp = []
                 jml = request.form['jumlahSiswa']
-                print("Jumlah siswa:"+jml)
-                print(mapel)
-                print(kelas)
-                print(tgl)
                 for i in range(1, int(jml)+1):
                     nis = request.form['nis'+str(i)]
                     status = request.form['status'+str(i)]
                     temp = (mapel, nis, kelas, tgl, status)
                     listTemp.append(temp)
-                print(listTemp)
                 sql = "INSERT INTO presensi VALUES (%s, %s, %s, %s, %s)"
                 cursor.executemany(sql, listTemp)
                 conn.commit()
@@ -1525,6 +1569,7 @@ def tambahAbsensi(kelas, mapel, tgl):
 @app.route('/dashboard_guru/data_nilai', methods = ['GET', 'POST'])
 def dataNilai(mapel, kelas):
     if verifLogin(2):
+
         return render_template('guru/data_nilai.html')
     else:
         return redirect(url_for('index'))
@@ -1532,6 +1577,7 @@ def dataNilai(mapel, kelas):
 @app.route('/dashboard_guru/edit_absensi/<mapel>/<kelas>', methods = ['GET', 'POST'])
 def cekNilai(mapel, kelas):
     if verifLogin(2):
+        
         return render_template('guru/detail_nilai.html')
     else:
         return redirect(url_for('index'))
