@@ -29,19 +29,19 @@
             <li class="nav-item dropdown active">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
               <ul class="dropdown-menu">
-                  <li {% if jenis|capitalize == jNilai[0]  %} class="active" {% endif %}>
+                  <li>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/tugas">Nilai Tugas</a>
                   </li>
-                  <li {% if jenis|capitalize == jNilai[1]  %} class="active" {% endif %}>
+                  <li>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/praktek">Nilai Praktek</a>
                   </li>
-                  <li {% if jenis|capitalize == jNilai[2]  %} class="active" {% endif %}>
+                  <li>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/ujian">Nilai Ujian</a>
                   </li>
-                  <li>
+                  <li {% if jenis|upper == jNilai[3]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/UTS">Nilai UTS</a>
                   </li>
-                  <li>
+                  <li {% if jenis|upper == jNilai[4]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/UAS">Nilai UAS</a>
                   </li>
                   <li>
@@ -61,13 +61,13 @@
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1 href="/dashboard_guru">Data Nilai {{jenis|capitalize}} Kelas {{kls[1]}} / Mata Pelajaran {{map[1]}}</h1>
+                  <h1 href="/dashboard_guru">Data Nilai {{jenis}} Kelas {{kls[1]}} / Mata Pelajaran {{map[1]}}</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
                           <a href="/dashboard_guru">Dashboard</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Data Nilai {{jenis|capitalize}}
+                          Data Nilai {{jenis}}
                       </div>
                   </div>
               </div>
@@ -103,8 +103,9 @@
                       <thead class="bg-primary">
                           <tr>
                               <th class="text-light">No</th>
-                              <th class="text-light">Hari Tanggal</th>
-                              <th class="text-light">Aksi</th>
+                              <th class="text-light">NIS</th>
+                              <th class="text-light">Nama Siswa</th>
+                              <th class="text-light">Nilai</th>
                           </tr>
                       </thead>
                       <tbody>
@@ -113,73 +114,44 @@
                       <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
                       {% for data in listNilai %}
                           <tr>
-                              {% set x = count+loop.index %}
+                              {% set x = loop.index %}
                               <td>{{ x }}</td>
-                              <td>{{ hariNilai[data[0]] }} / {{ data[1] }}</td>
-                              <td>
-                                  <div class="btn-group mb-3" role="group">
-                                      <a href="/dashboard_guru/info_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-info">
-                                          <i class="fas fa-info-circle"></i>
-                                      </a>
-                                      <a href="/dashboard_guru/edit_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-warning">
-                                          <i class="far fa-edit"></i>
-                                      </a>
-                                      <a href="/dashboard_guru/hapus_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-danger">
-                                          <i class="fas fa-times"></i>
-                                      </a>
-                                  </div>
-                              </td>
+                              <td>{{ data[1] }}</td>
+                              <td>{{ data[2] }}</td>
+                              <td>{{ data[3] }}</td>
                           </tr>
                       {% endfor %}
                       <!-- Namun jika tabel data nilai kosong -->
                       {% else %}
                           <tr>
-                              <td colspan="3">Belum ada nilai</td>
+                              <td colspan="4">Belum ada nilai</td>
                           </tr>
                       {% endif %}
                       </tbody>
                   </table>
+                  {% if tambah is not false %}
                   <div class="buttons mr-auto">
                       <a href="/dashboard_guru/tambah_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-info">
-                          <i class="fas fa-plus"></i>Tambah Nilai {{jenis|capitalize}}
+                          <i class="fas fa-plus"></i>Tambah Nilai {{jenis|upper}}
                       </a>
                   </div>
-                  <div class="buttons">
-                      <nav>
-                          <ul class="pagination">
-                              {% if prev < 1 %}
-                              <li class="page-item disabled">
-                                  <a class="page-link" href="{{ url_for('dataNilai', jenis=jenis, mapel=map[0], kelas=kls[0], page=prev) }}" aria-label="Previous">
-                                      <span aria-hidden="true">«Prev</span>
-                                      <span class="sr-only">Previous</span>
-                                  </a>
-                              </li>
-                              {% else %}
-                              <li class="page-item">
-                                  <a class="page-link" href="{{ url_for('dataNilai', jenis=jenis, mapel=map[0], kelas=kls[0], page=prev) }}" aria-label="Previous">
-                                      <span aria-hidden="true">«Prev</span>
-                                      <span class="sr-only">Previous</span>
-                                  </a>
-                              </li>
-                              {% endif %}
-                              {% if lanjut is false %}
-                              <li class="page-item disabled">
-                                  <a class="page-link" href="{{ url_for('dataNilai', jenis=jenis, mapel=map[0], kelas=kls[0], page=next) }}" aria-label="Next">
-                                      <span aria-hidden="true">Next»</span>
-                                      <span class="sr-only">Next</span>
-                                  </a>
-                              </li>
-                              {% else %}
-                              <li class="page-item">
-                                  <a class="page-link" href="{{ url_for('dataNilai', jenis=jenis, mapel=map[0], kelas=kls[0], page=next) }}" aria-label="Next">
-                                      <span aria-hidden="true">Next»</span>
-                                      <span class="sr-only">Next</span>
-                                  </a>
-                              </li>
-                              {% endif %}
-                          </ul>
-                      </nav>
+                  {% elif tambah is false %}
+                  <div class="rows">
+                      <p style="font-weight: bold">Statistik</p>
+                      <p>Rata-rata : {{avg}}</p>
+                      <p>Nilai tertinggi : {{max}}</p>
+                      <p>Nilai terendah : {{min}}</p>
                   </div>
+                  <div class="buttons mr-auto">
+                      <a href="/dashboard_guru/edit_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-warning">
+                          <i class="far fa-edit"></i>Edit Nilai {{jenis|upper}}
+                      </a>
+                      <a href="/dashboard_guru/hapus_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-danger">
+                          <i class="fas fa-times"></i>Hapus Nilai {{jenis|upper}}
+                      </a>
+                  </div>
+                  {% endif %}
+
               </div>
           </section>
       </div>

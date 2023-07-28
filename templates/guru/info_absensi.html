@@ -1,4 +1,4 @@
-{% set title = 'Guru - Hapus Absensi SMA Negeri 1 Belinyu' %}
+{% set title = 'Guru - Info Absensi SMA Negeri 1 Belinyu' %}
 {% extends "master/base.html" %}
 
 {% block sidebar %}
@@ -18,14 +18,11 @@
             <li class="nav-item dropdown active">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
               <ul class="dropdown-menu">
-                  <li>
+                  <li class="active">
                       <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
                   </li>
                   <li>
                       <a class="nav-link" href="/dashboard_guru/absensi_baru">Absensi Baru</a>
-                  </li>
-                  <li class="active">
-                      <a class="nav-link" href="#">Hapus Absensi</a>
                   </li>
               </ul>
             </li>
@@ -65,42 +62,58 @@
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1>Hapus Data Absensi</h1>
+                  <h1>Info Data Absensi</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
                           <a href="/dashboard_guru">Dashboard</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Hapus Absensi
+                          Info Absensi
                       </div>
                   </div>
               </div>
               <div class="section-body">
-                  <div class="card mx-auto" style="width: 50%">
-                      <form action="/dashboard_guru/hapus_absensi/{{mapel}}/{{kelas}}/{{tgl}}" method="post">
+                  <div class="card">
+                      <form action="/dashboard_guru/info_absensi/{{mapel}}/{{kelas}}/{{tgl}}" method="post">
                           <div class="card-header">
-                              <h4>Hapus Absensi</h4>
+                              <h4>Absensi Kelas {{kls[1]}} / Mata Pelajaran {{mapel}} / {{hari}}, {{tgl}}</h4>
                           </div>
                           <div class="card-body">
+                              <!-- Looping data absensi siswa pada kelas bersangkutan -->
                               <div class="form-group">
-                                  <label>Kelas</label>
-                                  <p class="card-text">{{ kls[1] }}</p>
-                              </div>
-                              <div class="form-group">
-                                  <label>Mapel</label>
-                                  <p class="card-text">{{ mapel }} / {{ matapel[1] }}</p>
-                              </div>
-                              <div class="form-group">
-                                  <label>Tanggal</label>
-                                  <p class="card-text">{{ hariAbsen }}, {{ tgl }}</p>
+                                  <div class="row gutters-sm">
+                                      <div class="col-6 col-sm-2">
+                                          <p style="font-weight: bold">No</p>
+                                      </div>
+                                      <div class="col-6 col-sm-6">
+                                          <p style="font-weight: bold">NIS / Nama</p>
+                                      </div>
+                                      <div class="col-6 col-sm-4">
+                                          <p style="font-weight: bold">Status Kehadiran</p>
+                                      </div>
+                              {% for data in absensi %}
+                              {% set x = loop.index %}
+                                    <div class="col-6 col-sm-2">
+                                      <p>{{ x }}</p>
+                                    </div>
+                                    <div class="col-6 col-sm-6">
+                                      <p>{{data[0]}} / {{data[1]}}</p>
+                                    </div>
+                                    <div class="col-6 col-sm-4">
+                                      <p>{{data[2]}}</p>
+                                    </div>
+                              {% endfor %}
+                                      </div>
+                                  <div class="rows">
+                                      <p style="font-weight: bold">Total Kehadiran</p>
+                                      {% for total in res %}
+                                      <p>{{total[0]}} : {{total[1]}}</p>
+                                      {% endfor %}
+                                  </div>
                               </div>
                           </div>
                           <div class="card-footer text-center">
-                              <p class="card-text" style="font-weight: bold">Anda yakin ingin menghapus data ini?</p>
-                          </div>
-                          <div class="card-footer text-center">
-                              <button class="btn btn-primary" type="submit">Hapus</button>
-                              <a href="/dashboard_guru/data_absensi/{{mapel}}/{{kelas}}" class="btn btn-danger">Batal</a>
+                              <a href="/dashboard_guru/data_absensi/{{mapel}}/{{kelas}}" class="btn btn-danger">Kembali</a>
                         </div>
                       </form>
                   </div>

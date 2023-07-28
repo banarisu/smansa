@@ -1,10 +1,122 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% set title = 'Guru - Cek Nilai SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
 
-</body>
-</html>
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Guru</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_guru" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru/absensi_baru">Absensi Baru</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
+              <ul class="dropdown-menu">
+                  <li {% if jenis|capitalize == jNilai[0]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/tugas">Nilai Tugas</a>
+                  </li>
+                  <li {% if jenis|capitalize == jNilai[1]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/praktek">Nilai Praktek</a>
+                  </li>
+                  <li {% if jenis|capitalize == jNilai[2]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/ujian">Nilai Ujian</a>
+                  </li>
+                  <li {% if jenis|upper == jNilai[3]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/UTS">Nilai UTS</a>
+                  </li>
+                  <li {% if jenis|upper == jNilai[4]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/UAS">Nilai UAS</a>
+                  </li>
+                  <li {% if jenis|capitalize == jNilai[5]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/final">Nilai Akhir</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_guru/jadwal/{{session.id}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+{% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1 href="/dashboard_guru">Cek Nilai Siswa</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_guru">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Data Nilai
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <div class="card">
+                      <div class="card-header">
+                          <h4>Pilih Kelas dan Mata Pelajaran</h4>
+                      </div>
+                      <div class="card-body">
+                      {% if kls is not false %}
+                      <div id="accordion">
+                      {% for x in kls %}
+                        <div class="accordion">
+                            <div class="accordion-header" role="button" data-toggle="collapse" data-target="#{{x[0]}}" aria-expanded="false" style="">
+                                <h4>{{x[1]}}</h4>
+                            </div>
+                            <div class="accordion-body collapse" id="{{x[0]}}" data-parent="#accordion">
+                                <ul class="nav flex-column">
+                                {% for map in mapel %}
+                                {% if map[0] == x[0] %}
+                                <li>
+                                    <!-- Jika nilai UTS/UAS -->
+                                    {% if jenis|upper == jNilai[3] or jenis|upper == jNilai[4] %}
+                                    <a class="nav-link" href="/dashboard_guru/data_nilai_semester/{{jenis}}/{{map[1]}}/{{map[0]}}">{{map[1]}}/{{map[2]}}</a>
+                                    <!-- Jika nilai final -->
+                                    {% elif jenis|capitalize == jNilai[5] %}
+                                    <a class="nav-link" href="/dashboard_guru/data_nilai_final/{{map[1]}}/{{map[0]}}">{{map[1]}}/{{map[2]}}</a>
+                                    <!-- Jika nilai tugas/praktek/ujian biasa -->
+                                    {% else %}
+                                    <a class="nav-link" href="/dashboard_guru/data_nilai/{{jenis}}/{{map[1]}}/{{map[0]}}">{{map[1]}}/{{map[2]}}</a>
+                                    {% endif %}
+                                </li>
+                                {% endif %}
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                      {% endfor %}
+                      </div>
+                      {% else %}
+                        <li class="nav-item">
+                            <h5 class="text-dark">Anda belum memiliki kelas yang diajar</h5>
+                        </li>
+                      {% endif %}
+                      </div>
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

@@ -30,19 +30,22 @@
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
               <ul class="dropdown-menu">
                   <li>
-                      <a class="nav-link" href="/dashboard_guru">Nilai Tugas</a>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/tugas">Nilai Tugas</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_guru">Nilai Praktek</a>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/praktek">Nilai Praktek</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_guru">Nilai Ujian</a>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/ujian">Nilai Ujian</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_guru">Nilai UTS/UAS</a>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/UTS">Nilai UTS</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_guru">Cetak</a>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/UAS">Nilai UAS</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_guru/cek_nilai/final">Nilai Akhir</a>
                   </li>
               </ul>
             </li>
@@ -117,6 +120,9 @@
                                   {{ hariAbsen[data[0]] }} / {{ data[1] }}</td>
                               <td>
                                   <div class="btn-group mb-3" role="group">
+                                      <a href="/dashboard_guru/info_absensi/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-info">
+                                          <i class="fas fa-info-circle"></i>
+                                      </a>
                                       <a href="/dashboard_guru/edit_absensi/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-warning">
                                           <i class="far fa-edit"></i>
                                       </a>

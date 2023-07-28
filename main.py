@@ -6,10 +6,10 @@ from werkzeug.utils import secure_filename
 from openpyxl import load_workbook
 from datetime import datetime, date
 import pymysql.cursors
-import os
 
 app = Flask(__name__)
 app.secret_key = "Smansa"
+#Folder untuk meletakkan file upload
 upl = r'C:\Users\fenar\Smansa\static\uploads'
 app.config['UPLOAD_FOLDER'] = upl
 app.config['MAX_CONTENT_PATH'] = 10000000
@@ -1396,9 +1396,39 @@ def dataAbsensi(mapel, kelas, page):
         # Jika halaman selanjutnya kosong
         if not nextPage:
             lanjut = False
+        # Jika belum ada data absensi
         if not absensi:
             absensi = False
         return render_template('guru/detail_absensi.html', count=counter, hari=numHari, map=matapel, kls=kls, prev=prev, next=next, absensi=absensi, lanjut=lanjut, hariAbsen=hariAbsen, status=Stat)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/info_absensi/<mapel>/<kelas>/<tgl>', methods = ['GET', 'POST'])
+def infoAbsensi(mapel, kelas, tgl):
+    if verifLogin(2):
+        openDb()
+        global Stat
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil total kehadiran
+        sql = "SELECT s.status, ifnull(status_count,0) as total FROM statuspresensi s LEFT JOIN (SELECT p.status, count(*) as status_count FROM presensi p WHERE mapel = %s AND kelas = %s AND tanggal = %s GROUP BY p.status) as total_status ON s.status = total_status.status ORDER BY FIELD(s.status,'Hadir','Izin','Sakit','Alpha');"
+        mapelas = (mapel, kelas, tgl)
+        cursor.execute(sql, mapelas)
+        res = cursor.fetchall()
+
+        # Ambil data absensi yang akan dipilih
+        sql = "SELECT p.siswa, s.nama, p.status FROM presensi p LEFT JOIN siswa s ON p.siswa = s.nis WHERE p.mapel = %s AND p.kelas = %s AND p.tanggal = %s"
+        cursor.execute(sql, mapelas)
+        absensiKelas = cursor.fetchall()
+
+        return render_template('guru/info_absensi.html', hari=numHari, absensi=absensiKelas, mapel=mapel, kelas=kelas, tgl=tgl, kls=kls, res=res)
     else:
         return redirect(url_for('index'))
 
@@ -1410,6 +1440,11 @@ def editAbsensi(mapel, kelas, tgl):
         tanggal = date.today()
         dow = tanggal.isoweekday()
         numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
 
         # Ambil data absensi yang akan diedit
         sql = "SELECT p.siswa, s.nama, p.status FROM presensi p LEFT JOIN siswa s ON p.siswa = s.nis WHERE p.mapel = %s AND p.kelas = %s AND p.tanggal = %s"
@@ -1442,7 +1477,7 @@ def editAbsensi(mapel, kelas, tgl):
                 closeDb()
             return redirect(url_for('dataAbsensi', mapel=mapel, kelas=kelas, page=1))
 
-        return render_template('guru/edit_absensi.html', hari=numHari, absensi=absensiKelas, statAbsen=statAbsensi, mapel=mapel, kelas=kelas, tgl=tgl)
+        return render_template('guru/edit_absensi.html', hari=numHari, absensi=absensiKelas, statAbsen=statAbsensi, mapel=mapel, kelas=kelas, tgl=tgl, kls=kls)
     else:
         return redirect(url_for('index'))
 
@@ -1488,6 +1523,7 @@ def hapusAbsensi(mapel, kelas, tgl):
 def absensiBaru():
     if verifLogin(2):
         openDb()
+        global Stat
         tanggal = date.today()
         dow = tanggal.isoweekday()
         numHari = cekHari(dow)
@@ -1498,7 +1534,7 @@ def absensiBaru():
         kelas = cursor.fetchall()
 
         # Ambil daftar mapel yang diajar
-        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
+        sql = "SELECT DISTINCT j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
         cursor.execute(sql, session['id'])
         mapel = cursor.fetchall()
 
@@ -1507,6 +1543,11 @@ def absensiBaru():
                 kls = request.form.get('kelas')
                 mpl = request.form.get('mapel')
                 tgl = request.form.get('tanggal')
+                # Jika tanggal yang dipilih adalah hari sabtu atau minggu
+                if datetime.strptime(tgl, '%Y-%m-%d').isoweekday() == 6 or datetime.strptime(tgl, '%Y-%m-%d').isoweekday() == 7:
+                    Stat = False
+                    flash('Tidak dapat menambah absensi di luar hari belajar')
+                    return redirect(url_for('absensiBaru'))
                 closeDb()
                 return redirect(url_for('tambahAbsensi', kelas=kls, mapel=mpl, tgl=tgl))
             except Exception as err:
@@ -1566,19 +1607,185 @@ def tambahAbsensi(kelas, mapel, tgl):
     else:
         return redirect(url_for('index'))
 
-@app.route('/dashboard_guru/data_nilai', methods = ['GET', 'POST'])
-def dataNilai(mapel, kelas):
+@app.route('/dashboard_guru/cek_nilai/<jenis>', methods = ['GET', 'POST'])
+def cekNilai(jenis):
     if verifLogin(2):
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
 
-        return render_template('guru/data_nilai.html')
+        # Ambil daftar kelas yang diajar
+        sql = "SELECT DISTINCT j.kelas, k.namakelas FROM jadwal j LEFT JOIN kelas k ON j.kelas = k.kelas WHERE j.pengajar = %s"
+        cursor.execute(sql, session['id'])
+        kls = cursor.fetchall()
+
+        # Ambil daftar mapel yang diajar
+        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
+        cursor.execute(sql, session['id'])
+        mapel = cursor.fetchall()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        # Jika guru tidak memiliki kelas & mapel yang diajar
+        if not kls:
+            kls = False
+
+        return render_template('guru/data_nilai.html', hari=numHari, kls=kls, mapel=mapel, jenis=jenis, jNilai=jNilai)
     else:
         return redirect(url_for('index'))
 
-@app.route('/dashboard_guru/edit_absensi/<mapel>/<kelas>', methods = ['GET', 'POST'])
-def cekNilai(mapel, kelas):
+@app.route('/dashboard_guru/data_nilai/<jenis>/<mapel>/<kelas>', methods = ['GET', 'POST'], defaults = {'page':1})
+@app.route('/dashboard_guru/data_nilai/<jenis>/<mapel>/<kelas>/<int:page>', methods = ['GET', 'POST'])
+def dataNilai(jenis, mapel, kelas, page):
     if verifLogin(2):
-        
-        return render_template('guru/detail_nilai.html')
+        openDb()
+        global Stat, lanjut
+        prev = page - 1
+        next = page + 1
+        counter = prev * 10
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil data daftar nilai yang dipilih
+        sql = "SELECT DISTINCT WEEKDAY(tanggal), tanggal FROM nilaihitung WHERE mapel = %s AND kelas = %s AND nomor = %s"
+        mapelKelas = (matapel[0], kls[0], jn)
+        cursor.execute(sql, mapelKelas)
+        nilaiAll = cursor.fetchall()
+        hariNilai = []
+        for x in range(1, 8):
+            hariNilai.append(cekHari(x))
+        # Slice data yang akan ditampilkan sebanyak 10 baris
+        listNilai = nilaiAll[counter:page * 10]
+        # Data slice halaman selanjutnya
+        nextPage = nilaiAll[page * 10:next * 10]
+        # Jika halaman selanjutnya kosong
+        if not nextPage:
+            lanjut = False
+        # Jika belum ada data nilai
+        if not listNilai:
+            listNilai = False
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        return render_template('guru/detail_nilai.html', hari=numHari, kls=kls, map=matapel, listNilai=listNilai, hariNilai=hariNilai, jNilai=jNilai, jenis=jenis, lanjut=lanjut, status=Stat, count=counter, prev=prev, next=next)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/data_nilai_semester/<jenis>/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def nilaiSemester(jenis, mapel, kelas):
+    if verifLogin(2):
+        openDb()
+        global Stat
+        tempSum = 0
+        tempNum = 0
+        listSum = []
+        avg = 0
+        highest = 0
+        lowest = 0
+        tambah = False
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Cek jika sudah ada nilai di tabel db atau belum
+        sql = "SELECT anggota FROM rombel WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        siswaKelas = cursor.fetchall()
+        for x in siswaKelas:
+            temp = "SELECT siswa FROM nilai WHERE mapel = %s AND siswa = %s AND kelas = %s"
+            stk = (matapel[0], x, kls[0])
+            cursor.execute(temp, stk)
+            tempSiswa = cursor.fetchone()
+            # Kalau belum ada/kosong, maka buat baru di tabel
+            if not tempSiswa:
+                temp2 = "INSERT INTO nilai (mapel, siswa, kelas) VALUES (%s, %s, %s)"
+                cursor.execute(temp2, stk)
+                conn.commit()
+
+        # Ambil data nilai
+        if jenis == "UTS":
+            sql = "SELECT n.idnilai, n.siswa, s.nama, n.uts FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s"
+        elif jenis == "UAS":
+            sql = "SELECT n.idnilai, n.siswa, s.nama, n.uas FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s"
+        mapelKelas = (matapel[0], kls[0])
+        cursor.execute(sql, mapelKelas)
+        listNilai = cursor.fetchall()
+
+        # Jika belum ada data nilai
+        for a in listNilai:
+            if a[3] == None:
+                tambah = True;
+                listNilai = False
+                break
+
+        # Jika nilai tidak kosong, maka hitung rata-rata
+        if listNilai:
+            for b in listNilai:
+                tempSum += b[3]
+                listSum.append(b[3])
+                tempNum += 1
+            tempAvg = tempSum / tempNum
+            # Untuk membatasi 2 digit angka desimal
+            avg = f"{tempAvg:.2f}"
+            highest = max(listSum)
+            lowest = min(listSum)
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        return render_template('guru/nilai_semester.html', hari=numHari, kls=kls, map=matapel, listNilai=listNilai, tambah=tambah, jNilai=jNilai, jenis=jenis, status=Stat, avg=avg, max=highest, min=lowest)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/data_nilai_final/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def nilaiFinal(mapel, kelas):
+    if verifLogin(2):
+
+        return render_template('guru/nilai_akhir.html')
     else:
         return redirect(url_for('index'))
 
