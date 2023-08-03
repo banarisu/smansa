@@ -111,6 +111,7 @@
                       <!-- Jika tabel nilai tidak kosong, maka tampilkan... -->
                       {% if listNilai is not false %}
                       <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      <!-- data[1] = tanggal nilai -->
                       {% for data in listNilai %}
                           <tr>
                               {% set x = count+loop.index %}
@@ -124,9 +125,11 @@
                                       <a href="/dashboard_guru/edit_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-warning">
                                           <i class="far fa-edit"></i>
                                       </a>
+                                      <!--
                                       <a href="/dashboard_guru/hapus_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}/{{data[1]}}" class="btn btn-icon btn-danger">
                                           <i class="fas fa-times"></i>
                                       </a>
+                                      -->
                                   </div>
                               </td>
                           </tr>
@@ -140,7 +143,7 @@
                       </tbody>
                   </table>
                   <div class="buttons mr-auto">
-                      <a href="/dashboard_guru/tambah_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-info">
+                      <a href="/dashboard_guru/nilai_baru/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-info">
                           <i class="fas fa-plus"></i>Tambah Nilai {{jenis|capitalize}}
                       </a>
                   </div>

@@ -16,25 +16,28 @@
               <a href="/dashboard_siswa" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
             </li>
             <li class="nav-item dropdown active">
-              <a href="/dashboard_siswa" class="nav-link"><i class="fas fa-user"></i><span>Cek Absensi</span></a>
+              <a href="/dashboard_siswa/cek_absen" class="nav-link"><i class="fas fa-user"></i><span>Cek Absensi</span></a>
             </li>
             <li class="nav-item dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
               <ul class="dropdown-menu">
                   <li>
-                      <a class="nav-link" href="/dashboard_siswa">Nilai Tugas</a>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/Tugas">Nilai Tugas</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_siswa">Nilai Praktek</a>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/Praktek">Nilai Praktek</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_siswa">Nilai Ujian</a>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/Ujian">Nilai Ujian</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_siswa">Nilai UTS/UAS</a>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/UTS">Nilai UTS</a>
                   </li>
                   <li>
-                      <a class="nav-link" href="/dashboard_siswa">Nilai Raport</a>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/UAS">Nilai UAS</a>
+                  </li>
+                  <li>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/Final">Nilai Akhir</a>
                   </li>
               </ul>
             </li>
@@ -45,3 +48,59 @@
     </aside>
   </div>
   {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1 style="margin-right: 10px;">Data Absensi {{siswa[0]}} / Mata Pelajaran {{map[1]}}</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_siswa">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Data Absensi
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <table class="table table-hover table-striped table-bordered text-center live-search-list">
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">No</th>
+                              <th class="text-light">Hari / Tanggal</th>
+                              <th class="text-light">Status</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel absen tidak kosong, maka tampilkan... -->
+                      {% if absensi is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in absensi %}
+                          <tr>
+                              {% set x = loop.index %}
+                              <td>{{ x }}</td>
+                              <td>{{ hariAbsen[data[0]] }} / {{ data[1] }}</td>
+                              <td>{{ data[2] }}</td>
+                          </tr>
+                      {% endfor %}
+                      <!-- Namun jika tabel data absensi kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="3">Belum ada data absensi</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+                  </table>
+                  <div class="rows">
+                      <p style="font-weight: bold">Total Kehadiran</p>
+                      {% for total in res %}
+                      <p>{{total[0]}} : {{total[1]}}</p>
+                      {% endfor %}
+                  </div>
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

@@ -103,8 +103,7 @@
                       <thead class="bg-primary">
                           <tr>
                               <th class="text-light">No</th>
-                              <th class="text-light">NIS</th>
-                              <th class="text-light">Nama Siswa</th>
+                              <th class="text-light">NIS / Nama</th>
                               <th class="text-light">Nilai</th>
                           </tr>
                       </thead>
@@ -116,22 +115,21 @@
                           <tr>
                               {% set x = loop.index %}
                               <td>{{ x }}</td>
-                              <td>{{ data[1] }}</td>
-                              <td>{{ data[2] }}</td>
+                              <td>{{ data[1] }} / {{ data[2] }}</td>
                               <td>{{ data[3] }}</td>
                           </tr>
                       {% endfor %}
                       <!-- Namun jika tabel data nilai kosong -->
                       {% else %}
                           <tr>
-                              <td colspan="4">Belum ada nilai</td>
+                              <td colspan="3">Belum ada nilai</td>
                           </tr>
                       {% endif %}
                       </tbody>
                   </table>
                   {% if tambah is not false %}
                   <div class="buttons mr-auto">
-                      <a href="/dashboard_guru/tambah_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-info">
+                      <a href="/dashboard_guru/nilai_baru/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-info">
                           <i class="fas fa-plus"></i>Tambah Nilai {{jenis|upper}}
                       </a>
                   </div>
@@ -143,12 +141,14 @@
                       <p>Nilai terendah : {{min}}</p>
                   </div>
                   <div class="buttons mr-auto">
-                      <a href="/dashboard_guru/edit_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-warning">
+                      <a href="/dashboard_guru/edit_nilai_semester/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-warning">
                           <i class="far fa-edit"></i>Edit Nilai {{jenis|upper}}
                       </a>
-                      <a href="/dashboard_guru/hapus_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-danger">
+                      <!--
+                      <a href="/dashboard_guru/hapus_nilai_semester/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-icon icon-left btn-danger">
                           <i class="fas fa-times"></i>Hapus Nilai {{jenis|upper}}
                       </a>
+                      -->
                   </div>
                   {% endif %}
 

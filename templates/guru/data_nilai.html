@@ -57,12 +57,12 @@
   </div>
   {% endblock sidebar %}
 
-{% block content %}
+  {% block content %}
   <div class="main-content">
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1 href="/dashboard_guru">Cek Nilai Siswa</h1>
+                  <h1 href="/dashboard_guru">Cek Nilai {{jenis|capitalize}}</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
                           <a href="/dashboard_guru">Dashboard</a>

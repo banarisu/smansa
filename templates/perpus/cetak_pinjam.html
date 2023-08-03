@@ -50,7 +50,7 @@
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1>Cetak Peminjaman</h1>
+                  <h1>Laporan Peminjaman</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
                           <a href="/dashboard_perpus">Dashboard</a>
@@ -59,12 +59,47 @@
                           <a href="/dashboard_perpus/peminjaman">Data Peminjaman</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Cetak Peminjaman
+                          Laporan Peminjaman
                       </div>
                   </div>
               </div>
               <div class="section-body">
-
+                  <table class="table table-hover table-striped table-bordered text-center live-search-list">
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">ID Peminjaman</th>
+                              <th class="text-light">Peminjam</th>
+                              <th class="text-light">ISBN Buku</th>
+                              <th class="text-light">Tanggal Pinjam</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel peminjaman tidak kosong, maka tampilkan... -->
+                      {% if peminjaman is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in peminjaman %}
+                          <tr>
+                              <td>{{ data[0] }}</td>
+                              <td>{{ data[1] }}</td>
+                              <td>{{ data[2] }}</td>
+                              <td>{{ data[3] }}</td>
+                          </tr>
+                      {% endfor %}
+                      <!-- Namun jika tabel peminjaman kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="4">Data tidak ditemukan</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+                  </table>
+                  {% if peminjaman is not false %}
+                  <p style="font-weight: bold">Statistik Laporan Peminjaman</p>
+                  <p>Sedang dipinjam: {{ res[0][0] }} </p>
+                  <p>Dikembalikan: {{ res[1][0] }} </p>
+                  <p>Rusak: {{ res[2][0] }} </p>
+                  <p>Hilang: {{ res[3][0] }} </p>
+                  {% endif %}
               </div>
           </section>
       </div>

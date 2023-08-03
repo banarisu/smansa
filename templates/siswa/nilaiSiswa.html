@@ -1,0 +1,169 @@
+{% set title = 'Siswa - Nilai SMA Negeri 1 Belinyu' %}
+{% extends "master/base.html" %}
+
+{% block sidebar %}
+  <div class="main-sidebar">
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-brand">
+            <a href="#">SMA Negeri 1 Belinyu</a>
+        </div>
+        <div class="sidebar-brand sidebar-brand-sm">
+            <img height="35px" width="35px" alt="image" src="{{ url_for ('static', filename='img/SmansaLogo.png') }}" class="rounded-circle mr-1">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard Siswa</li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_siswa" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_siswa" class="nav-link"><i class="fas fa-user"></i><span>Cek Absensi</span></a>
+            </li>
+            <li class="nav-item dropdown active">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
+              <ul class="dropdown-menu">
+                  <li {% if jenis|capitalize == jNilai[0]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/tugas">Nilai Tugas</a>
+                  </li>
+                  <li {% if jenis|capitalize == jNilai[1]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/praktek">Nilai Praktek</a>
+                  </li>
+                  <li {% if jenis|capitalize == jNilai[2]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/ujian">Nilai Ujian</a>
+                  </li>
+                  <li {% if jenis|upper == jNilai[3]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/UTS">Nilai UTS</a>
+                  </li>
+                  <li {% if jenis|upper == jNilai[4]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/UAS">Nilai UAS</a>
+                  </li>
+                  <li {% if jenis|capitalize == jNilai[5]  %} class="active" {% endif %}>
+                      <a class="nav-link" href="/dashboard_siswa/cek_nilai/final">Nilai Akhir</a>
+                  </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="/dashboard_siswa/jadwal/{{kls[0]}}/{{hari}}" class="nav-link"><i class="fas fa-columns"></i><span>Jadwal</span></a>
+            </li>
+        </ul>
+    </aside>
+  </div>
+  {% endblock sidebar %}
+
+  {% block content %}
+  <div class="main-content">
+      <div class="col-md">
+          <section class="section">
+              <div class="section-header">
+                  <h1>Data Nilai
+                      {% if jenis|upper == jNilai[3] or jenis|upper == jNilai[4]%}
+                        Semester
+                      {% else %}
+                        {{jenis|capitalize}}
+                      {% endif %}
+                      {{siswa[0]}} / Mata Pelajaran {{map[1]}}</h1>
+                  <div class="section-header-breadcrumb">
+                      <div class="breadcrumb-item">
+                          <a href="/dashboard_siswa">Dashboard</a>
+                      </div>
+                      <div class="breadcrumb-item">
+                          Data Nilai
+                      </div>
+                  </div>
+              </div>
+              <div class="section-body">
+                  <table class="table table-hover table-striped table-bordered text-center live-search-list">
+                      {% if tipe == 1 %}
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">No</th>
+                              <th class="text-light">Hari / Tanggal</th>
+                              <th class="text-light">Nilai</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel absen tidak kosong, maka tampilkan... -->
+                      {% if dataNilai is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in dataNilai %}
+                          <tr>
+                              {% set x = loop.index %}
+                              <td>{{ x }}</td>
+                              <td>{{ hariNilai[data[0]] }} / {{ data[1] }}</td>
+                              <td>{{ data[2] }}</td>
+                          </tr>
+                      {% endfor %}
+                      <!-- Namun jika tabel data nilai kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="3">Belum ada data nilai</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+
+                      {% elif tipe == 2 %}
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">NIS / Nama</th>
+                              <th class="text-light">UTS</th>
+                              <th class="text-light">UAS</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel absen tidak kosong, maka tampilkan... -->
+                      {% if dataNilai is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in dataNilai %}
+                          <tr>
+                              <td>{{ data[0] }} / {{ data[1] }}</td>
+                              <td>{% if data[2] is none %}-{% else %}{{ data[2] }}{% endif %}</td>
+                              <td>{% if data[3] is none %}-{% else %}{{ data[3] }}{% endif %}</td>
+                          </tr>
+                      {% endfor %}
+                      <!-- Namun jika tabel data nilai kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="3">Belum ada data nilai</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+
+
+                      {% elif tipe == 3 %}
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">NIS / Nama</th>
+                              <th class="text-light">Pengetahuan</th>
+                              <th class="text-light">Keterampilan</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel absen tidak kosong, maka tampilkan... -->
+                      {% if dataNilai is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in dataNilai %}
+                          <tr>
+                              <td>{{ data[0] }} / {{ data[1] }}</td>
+                              <td>{% if data[2] is none %}-{% else %}{{ data[2] }}{% endif %}</td>
+                              <td>{% if data[3] is none %}-{% else %}{{ data[3] }}{% endif %}</td>
+                          </tr>
+                      {% endfor %}
+                      <!-- Namun jika tabel data nilai kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="3">Belum ada data nilai</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+                      {% endif %}
+
+                  </table>
+                  {% if avg is not false %}
+                  <div class="rows">
+                      <p style="font-weight: bold">Rata-rata: {{avg}}</p>
+                  </div>
+                  {% endif %}
+              </div>
+          </section>
+      </div>
+  </div>
+  {% endblock content %}

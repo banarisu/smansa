@@ -1,4 +1,4 @@
-{% set title = 'Guru - Edit Absensi SMA Negeri 1 Belinyu' %}
+{% set title = 'Guru - Cek Nilai SMA Negeri 1 Belinyu' %}
 {% extends "master/base.html" %}
 
 {% block sidebar %}
@@ -15,39 +15,36 @@
             <li class="nav-item dropdown">
               <a href="/dashboard_guru" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
             </li>
-            <li class="nav-item dropdown active">
+            <li class="nav-item dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Absensi</span></a>
               <ul class="dropdown-menu">
                   <li>
                       <a class="nav-link" href="/dashboard_guru/cek_absensi">Cek Absensi</a>
-                  </li>
-                  <li class="active">
-                      <a class="nav-link" href="#">Edit Absensi</a>
                   </li>
                   <li>
                       <a class="nav-link" href="/dashboard_guru/absensi_baru">Absensi Baru</a>
                   </li>
               </ul>
             </li>
-            <li class="nav-item dropdown">
+            <li class="nav-item dropdown active">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-user"></i><span>Data Nilai</span></a>
               <ul class="dropdown-menu">
-                  <li>
+                  <li {% if jenis|capitalize == jNilai[0]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/tugas">Nilai Tugas</a>
                   </li>
-                  <li>
+                  <li {% if jenis|capitalize == jNilai[1]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/praktek">Nilai Praktek</a>
                   </li>
-                  <li>
+                  <li {% if jenis|capitalize == jNilai[2]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/ujian">Nilai Ujian</a>
                   </li>
-                  <li>
+                  <li {% if jenis|upper == jNilai[3]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/UTS">Nilai UTS</a>
                   </li>
-                  <li>
+                  <li {% if jenis|upper == jNilai[4]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/UAS">Nilai UAS</a>
                   </li>
-                  <li>
+                  <li {% if jenis|capitalize == jNilai[5]  %} class="active" {% endif %}>
                       <a class="nav-link" href="/dashboard_guru/cek_nilai/final">Nilai Akhir</a>
                   </li>
               </ul>
@@ -60,57 +57,59 @@
   </div>
   {% endblock sidebar %}
 
-{% block content %}
+  {% block content %}
   <div class="main-content">
       <div class="col-md">
           <section class="section">
               <div class="section-header">
-                  <h1>Edit Data Absensi</h1>
+                  <h1>Nilai {{jenis|capitalize}} Kelas {{kls[1]}} / {{map[0]}} / {{hariNilai}}, {{tgl}}</h1>
                   <div class="section-header-breadcrumb">
                       <div class="breadcrumb-item">
                           <a href="/dashboard_guru">Dashboard</a>
                       </div>
                       <div class="breadcrumb-item">
-                          Edit Absensi
+                          Info Nilai
                       </div>
                   </div>
               </div>
               <div class="section-body">
-                  <div class="card">
-                      <form action="/dashboard_guru/edit_absensi/{{mapel}}/{{kelas}}/{{tgl}}" method="post">
-                          <div class="card-header">
-                              <h4>Absensi Kelas {{kls[1]}} / Mata Pelajaran {{mapel}} / {{hariAbsen}}, {{tgl}}</h4>
-                          </div>
-                          <div class="card-body">
-                              <!-- Looping data absensi siswa pada kelas bersangkutan -->
-                              <input type="hidden" name="jumlahSiswa" value="{{ absensi|length }}"/>
-                              {% for data in absensi %}
+                <table class="table table-hover table-striped table-bordered text-center live-search-list">
+                      <thead class="bg-primary">
+                          <tr>
+                              <th class="text-light">No</th>
+                              <th class="text-light">NIS / Nama</th>
+                              <th class="text-light">Nilai</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                      <!-- Jika tabel nilai tidak kosong, maka tampilkan... -->
+                      {% if listNilai is not false %}
+                      <!-- Ini yang akan dilooping untuk memunculkan data ke dalam tabel-->
+                      {% for data in listNilai %}
+                          <tr>
                               {% set x = loop.index %}
-                              <div class="form-row">
-                                  <div class="form-group col-md-6">
-                                      <input type="hidden" name="nis{{ x }}" value="{{ data[0] }}"/>
-                                      <p>{{data[0]}} / {{data[1]}}</p>
-                                  </div>
-                                  <div class="form-group col-md-6">
-                                      <select class="form-control" name="status{{ x }}" required>
-                                          {% for a in statAbsen %}
-                                            {% if data[2] == a[0] %}
-                                                <option selected value="{{ a[0] }}">{{ a[0] }}</option>
-                                            {% else %}
-                                                <option value="{{ a[0] }}">{{ a[0] }}</option>
-                                            {% endif %}
-                                          {% endfor %}
-                                      </select>
-                                  </div>
-                              </div>
-                              {% endfor %}
-                          </div>
-                          <div class="card-footer text-center">
-                              <button class="btn btn-primary" type="submit">Edit</button>
-                              <a href="/dashboard_guru/data_absensi/{{mapel}}/{{kelas}}" class="btn btn-danger">Batal</a>
-                        </div>
-                      </form>
-                  </div>
+                              <td>{{ x }}</td>
+                              <td>{{ data[1] }} / {{ data[2] }}</td>
+                              <td>{{ data[3] }}</td>
+                          </tr>
+                      {% endfor %}
+                      <!-- Namun jika tabel data nilai kosong -->
+                      {% else %}
+                          <tr>
+                              <td colspan="3">Belum ada nilai</td>
+                          </tr>
+                      {% endif %}
+                      </tbody>
+                </table>
+                <div class="rows">
+                      <p style="font-weight: bold">Statistik</p>
+                      <p>Rata-rata : {{avg}}</p>
+                      <p>Nilai tertinggi : {{max}}</p>
+                      <p>Nilai terendah : {{min}}</p>
+                </div>
+              </div>
+              <div class="card-footer text-center">
+                <a href="/dashboard_guru/data_nilai/{{jenis}}/{{map[0]}}/{{kls[0]}}" class="btn btn-danger">Kembali</a>
               </div>
           </section>
       </div>

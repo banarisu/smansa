@@ -824,13 +824,14 @@ def jadwal(kode, hari):
         cursor.execute(sql)
         listHari = cursor.fetchall()
 
-        # Jika jadwal kelas tersebut kosong
-        if not jadwal:
-            jadwal = False;
-
         # Jika jadwal kelas tersebut sudah penuh
         if len(jadwal) >= 8:
             tambah = False
+
+        # Jika jadwal kelas tersebut kosong
+        if not jadwal:
+            jadwal = False
+
         closeDb()
         return render_template('admin/detail_jadwal.html', kode=kode, hari=hari, kelas=kelas, jadwal=jadwal, listHari=listHari, status=Stat, tambah=tambah)
     else:
@@ -1423,12 +1424,15 @@ def infoAbsensi(mapel, kelas, tgl):
         cursor.execute(sql, mapelas)
         res = cursor.fetchall()
 
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariAbsen = cekHari(nhari.isoweekday())
+
         # Ambil data absensi yang akan dipilih
         sql = "SELECT p.siswa, s.nama, p.status FROM presensi p LEFT JOIN siswa s ON p.siswa = s.nis WHERE p.mapel = %s AND p.kelas = %s AND p.tanggal = %s"
         cursor.execute(sql, mapelas)
         absensiKelas = cursor.fetchall()
 
-        return render_template('guru/info_absensi.html', hari=numHari, absensi=absensiKelas, mapel=mapel, kelas=kelas, tgl=tgl, kls=kls, res=res)
+        return render_template('guru/info_absensi.html', hari=numHari, absensi=absensiKelas, mapel=mapel, kelas=kelas, tgl=tgl, kls=kls, res=res, hariAbsen=hariAbsen)
     else:
         return redirect(url_for('index'))
 
@@ -1457,6 +1461,9 @@ def editAbsensi(mapel, kelas, tgl):
         cursor.execute(sql)
         statAbsensi = cursor.fetchall()
 
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariAbsen = cekHari(nhari.isoweekday())
+
         if request.method == 'POST':
             try:
                 jml = request.form['jumlahSiswa']
@@ -1477,7 +1484,7 @@ def editAbsensi(mapel, kelas, tgl):
                 closeDb()
             return redirect(url_for('dataAbsensi', mapel=mapel, kelas=kelas, page=1))
 
-        return render_template('guru/edit_absensi.html', hari=numHari, absensi=absensiKelas, statAbsen=statAbsensi, mapel=mapel, kelas=kelas, tgl=tgl, kls=kls)
+        return render_template('guru/edit_absensi.html', hari=numHari, absensi=absensiKelas, statAbsen=statAbsensi, mapel=mapel, kelas=kelas, tgl=tgl, kls=kls, hariAbsen=hariAbsen)
     else:
         return redirect(url_for('index'))
 
@@ -1784,10 +1791,697 @@ def nilaiSemester(jenis, mapel, kelas):
 @app.route('/dashboard_guru/data_nilai_final/<mapel>/<kelas>', methods = ['GET', 'POST'])
 def nilaiFinal(mapel, kelas):
     if verifLogin(2):
+        openDb()
+        global Stat, lengkap
+        nilaiTugas = True
+        nilaiPraktek = True
+        nilaiUjian = True
+        nilaiUTS = True
+        nilaiUAS = True
+        listNilai = []
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
 
-        return render_template('guru/nilai_akhir.html')
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Cek jika sudah ada nilai di tabel db atau belum
+        sql = "SELECT anggota FROM rombel WHERE kelas = %s  ORDER BY anggota ASC"
+        cursor.execute(sql, kelas)
+        siswaKelas = cursor.fetchall()
+        for x in siswaKelas:
+            temp = "SELECT siswa FROM nilai WHERE mapel = %s AND siswa = %s AND kelas = %s"
+            stk = (matapel[0], x, kls[0])
+            cursor.execute(temp, stk)
+            tempSiswa = cursor.fetchone()
+            # Kalau belum ada/kosong, maka buat baru di tabel
+            if not tempSiswa:
+                temp2 = "INSERT INTO nilai (mapel, siswa, kelas) VALUES (%s, %s, %s)"
+                cursor.execute(temp2, stk)
+                conn.commit()
+
+        # Ambil semua nilai tugas
+        sql = "SELECT DISTINCT tanggal FROM nilaihitung WHERE mapel = %s AND kelas = %s AND nomor = %s"
+        temp = (matapel[0], kls[0], 1)
+        cursor.execute(sql, temp)
+        jmlTugas = cursor.fetchall()
+        # Jika ada tugas, tabel tidak kosong
+        if jmlTugas and siswaKelas:
+            for x in siswaKelas:
+                sql = "SELECT nilai FROM nilaihitung WHERE mapel = %s AND kelas = %s AND siswa = %s AND nomor = %s ORDER BY siswa ASC"
+                temp = (matapel[0], kls[0], x, 1)
+                cursor.execute(sql, temp)
+                tempTugas = cursor.fetchall()
+                tmpTgs = [a[0] for a in tempTugas]
+                nilaiRata = sum(tmpTgs) / len(tmpTgs)
+                sql = "UPDATE nilai SET tugas = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                tugas = (nilaiRata, x, kls[0], matapel[0])
+                cursor.execute(sql, tugas)
+                conn.commit()
+        # Jika kosong
+        else:
+            nilaiTugas = False
+            for x in siswaKelas:
+                sql = "UPDATE nilai SET tugas = NULL WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                tglnull = (x, kls[0], matapel[0])
+                cursor.execute(sql, tglnull)
+                conn.commit()
+
+        # Ambil semua nilai praktek
+        sql = "SELECT DISTINCT tanggal FROM nilaihitung WHERE mapel = %s AND kelas = %s AND nomor = %s"
+        temp = (matapel[0], kls[0], 2)
+        cursor.execute(sql, temp)
+        jmlPraktek = cursor.fetchall()
+        # Jika ada praktek, tabel tidak kosong
+        if jmlPraktek and siswaKelas:
+            for x in siswaKelas:
+                sql = "SELECT nilai FROM nilaihitung WHERE mapel = %s AND kelas = %s AND siswa = %s AND nomor = %s ORDER BY siswa ASC"
+                temp = (matapel[0], kls[0], x, 2)
+                cursor.execute(sql, temp)
+                tempPraktek = cursor.fetchall()
+                tmpPrtk = [a[0] for a in tempPraktek]
+                nilaiRata = sum(tmpPrtk) / len(tmpPrtk)
+                sql = "UPDATE nilai SET praktek = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                praktek = (nilaiRata, x, kls[0], matapel[0])
+                cursor.execute(sql, praktek)
+                conn.commit()
+        else:
+            nilaiPraktek = False
+            for x in siswaKelas:
+                sql = "UPDATE nilai SET praktek = NULL WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                prtknull = (x, kls[0], matapel[0])
+                cursor.execute(sql, prtknull)
+                conn.commit()
+
+        # Ambil semua nilai ujian
+        sql = "SELECT DISTINCT tanggal FROM nilaihitung WHERE mapel = %s AND kelas = %s AND nomor = %s"
+        temp = (matapel[0], kls[0], 3)
+        cursor.execute(sql, temp)
+        jmlUjian = cursor.fetchall()
+        # Jika ada ujian, tabel tidak kosong
+        if jmlUjian and siswaKelas:
+            for x in siswaKelas:
+                sql = "SELECT nilai FROM nilaihitung WHERE mapel = %s AND kelas = %s AND siswa = %s AND nomor = %s ORDER BY siswa ASC"
+                temp = (matapel[0], kls[0], x, 3)
+                cursor.execute(sql, temp)
+                tempUjian = cursor.fetchall()
+                tmpUjn = [a[0] for a in tempUjian]
+                nilaiRata = sum(tmpUjn) / len(tmpUjn)
+                sql = "UPDATE nilai SET ujian = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                ujian = (nilaiRata, x, kls[0], matapel[0])
+                cursor.execute(sql, ujian)
+                conn.commit()
+        else:
+            nilaiUjian = False
+            for x in siswaKelas:
+                sql = "UPDATE nilai SET ujian = NULL WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                ujnnull = (x, kls[0], matapel[0])
+                cursor.execute(sql, ujnnull)
+                conn.commit()
+
+        # Ambil nilai UTS
+        sql = "SELECT uts FROM nilai WHERE mapel = %s AND kelas = %s ORDER BY siswa ASC"
+        temp = (matapel[0], kls[0])
+        cursor.execute(sql, temp)
+        datanilaiUTS = cursor.fetchall()
+        if not datanilaiUTS:
+            nilaiUTS = False
+            for x in siswaKelas:
+                sql = "UPDATE nilai SET uts = NULL WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                utsnull = (x, kls[0], matapel[0])
+                cursor.execute(sql, utsnull)
+                conn.commit()
+
+        # Ambil nilai UAS
+        sql = "SELECT uas FROM nilai WHERE mapel = %s AND kelas = %s ORDER BY siswa ASC"
+        temp = (matapel[0], kls[0])
+        cursor.execute(sql, temp)
+        datanilaiUAS = cursor.fetchall()
+        if not datanilaiUAS:
+            nilaiUAS = False
+            for x in siswaKelas:
+                sql = "UPDATE nilai SET uas = NULL WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                uasnull = (x, kls[0], matapel[0])
+                cursor.execute(sql, uasnull)
+                conn.commit()
+
+        # Jika semua nilai lengkap, maka hitung nilai pengetahuan dan keterampilan
+        if (nilaiTugas or nilaiPraktek) and nilaiUjian and nilaiUTS and nilaiUAS:
+            lengkap = True
+            sql = "SELECT tugas, praktek, ujian, uts, uas FROM nilai WHERE kelas = %s AND mapel = %s ORDER BY siswa ASC"
+            temp = (kls[0], matapel[0])
+            cursor.execute(sql, temp)
+            nilaiSiswa = cursor.fetchall()
+            x = 0
+            for sw in siswaKelas:
+                # Nilainya = 20% tugas atau praktek + 20% ujian + 30% uts + 30% uas
+                # Jika tidak ada nilai praktek, maka samakan dengan tugas, dan sebaliknya
+                if not nilaiTugas and nilaiPraktek:
+                    keterampilan = 0.2 * float(nilaiSiswa[x][1]) + 0.2 * float(nilaiSiswa[x][2]) + 0.3 * float(
+                        nilaiSiswa[x][3]) + 0.3 * float(nilaiSiswa[x][4])
+                    pengetahuan = keterampilan
+                elif not nilaiPraktek and nilaiTugas:
+                    pengetahuan = 0.2 * float(nilaiSiswa[x][0]) + 0.2 * float(nilaiSiswa[x][2]) + 0.3 * float(
+                        nilaiSiswa[x][3]) + 0.3 * float(nilaiSiswa[x][4])
+                    keterampilan = pengetahuan
+                else:
+                    pengetahuan = 0.2 * float(nilaiSiswa[x][0]) + 0.2 * float(nilaiSiswa[x][2]) + 0.3 * float(nilaiSiswa[x][3]) + 0.3 * float(nilaiSiswa[x][4])
+                    keterampilan = 0.2 * float(nilaiSiswa[x][1]) + 0.2 * float(nilaiSiswa[x][2]) + 0.3 * float(nilaiSiswa[x][3]) + 0.3 * float(nilaiSiswa[x][4])
+                sql = "UPDATE nilai SET pengetahuan = %s, keterampilan = %s WHERE siswa = %s AND mapel = %s"
+                temp = (pengetahuan, keterampilan, sw, matapel[0])
+                cursor.execute(sql, temp)
+                conn.commit()
+                x += 1
+            sql = "SELECT n.siswa, s.nama, n.tugas, n.praktek, n.ujian, n.uts, n.uas, n.pengetahuan, n.keterampilan FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.kelas = %s AND n.mapel = %s ORDER BY n.siswa ASC"
+            temp = (kls[0], matapel[0])
+            cursor.execute(sql, temp)
+            listNilai = cursor.fetchall()
+        else:
+            lengkap = False
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        return render_template('guru/nilai_final.html', hari=numHari, kls=kls, map=matapel, lengkap=lengkap, jNilai=jNilai, status=Stat, listNilai=listNilai)
     else:
         return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/info_nilai/<jenis>/<mapel>/<kelas>/<tgl>', methods = ['GET', 'POST'])
+def infoNilai(jenis, mapel, kelas, tgl):
+    if verifLogin(2):
+        openDb()
+        tempSum = 0
+        tempNum = 0
+        listSum = []
+        avg = 0
+        highest = 0
+        lowest = 0
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariNilai = cekHari(nhari.isoweekday())
+
+        # Ambil data nilai
+        if jenis == "tugas":
+            sql = "SELECT n.idnilai, n.siswa, s.nama, n.nilai FROM nilaihitung n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s AND n.nomor = 1 AND n.tanggal = %s"
+        elif jenis == "praktek":
+            sql = "SELECT n.idnilai, n.siswa, s.nama, n.nilai FROM nilaihitung n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s AND n.nomor = 2 AND n.tanggal = %s"
+        elif jenis == "ujian":
+            sql = "SELECT n.idnilai, n.siswa, s.nama, n.nilai FROM nilaihitung n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s AND n.nomor = 3 AND n.tanggal = %s"
+        mapelKelas = (matapel[0], kls[0], tgl)
+        cursor.execute(sql, mapelKelas)
+        listNilai = cursor.fetchall()
+
+        if listNilai:
+            for b in listNilai:
+                tempSum += b[3]
+                listSum.append(b[3])
+                tempNum += 1
+            tempAvg = tempSum / tempNum
+            # Untuk membatasi 2 digit angka desimal
+            avg = f"{tempAvg:.2f}"
+            highest = max(listSum)
+            lowest = min(listSum)
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        return render_template('guru/info_nilai.html', hari=numHari, kls=kls, map=matapel, listNilai=listNilai, jNilai=jNilai, jenis=jenis, avg=avg, max=highest, min=lowest, hariNilai=hariNilai, tgl=tgl)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/nilai_baru/<jenis>/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def nilaiBaru(jenis, mapel, kelas):
+    if verifLogin(2):
+        openDb()
+        global Stat
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil daftar kelas yang diajar
+        sql = "SELECT DISTINCT j.kelas, k.namakelas FROM jadwal j LEFT JOIN kelas k ON j.kelas = k.kelas WHERE j.pengajar = %s"
+        cursor.execute(sql, session['id'])
+        kls = cursor.fetchall()
+
+        # Ambil daftar mapel yang diajar
+        sql = "SELECT DISTINCT j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
+        cursor.execute(sql, session['id'])
+        matapel = cursor.fetchall()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        if request.method == 'POST':
+            try:
+                jn = int(request.form.get('jenis'))
+                cls = request.form.get('kelas')
+                mpl = request.form.get('mapel')
+                if jn == 1 or jn == 2 or jn == 3:
+                    tgl = request.form.get('tanggal')
+                    # Jika tanggal yang dipilih adalah hari sabtu atau minggu
+                    if datetime.strptime(tgl, '%Y-%m-%d').isoweekday() == 6 or datetime.strptime(tgl, '%Y-%m-%d').isoweekday() == 7:
+                        Stat = False
+                        flash('Tidak dapat menambah nilai di luar hari belajar')
+                        return redirect(url_for('nilaiBaru', jenis=jenis, kelas=kelas, mapel=mapel))
+                    return redirect(url_for('tambahNilai', jenis=jenis, kelas=cls, mapel=mpl, tgl=tgl))
+                elif jn == 4 or jn == 5:
+                    return redirect(url_for('tambahNilaiSemester', jenis=jenis, kelas=cls, mapel=mpl))
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('cekNilai', jenis=jenis))
+
+        return render_template('guru/nilai_baru.html', jn=jn, hari=numHari, kls=kls, map=matapel, kelas=kelas, mapel=mapel, jenis=jenis, jNilai=jNilai)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/tambah_nilai/<jenis>/<mapel>/<kelas>/<tgl>', methods = ['GET', 'POST'])
+def tambahNilai(jenis, mapel, kelas, tgl):
+    if verifLogin(2):
+        global Stat
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariNilai = cekHari(nhari.isoweekday())
+
+        # Ambil data murid di kelas tersebut
+        sql = "SELECT r.anggota, s.nama FROM rombel r LEFT JOIN siswa s ON r.anggota = s.nis WHERE r.kelas = %s"
+        cursor.execute(sql, kelas)
+        siswa = cursor.fetchall()
+        if request.method == 'POST':
+            try:
+                listTemp = []
+                jml = request.form['jumlahSiswa']
+                for i in range(1, int(jml) + 1):
+                    nis = request.form['nis' + str(i)]
+                    nilai = float(request.form['nilai' + str(i)])
+                    temp = (matapel[0], nis, kls[0], jn, nilai, tgl)
+                    listTemp.append(temp)
+                sql = "INSERT INTO nilaihitung (mapel, siswa, kelas, nomor, nilai, tanggal) VALUES (%s, %s, %s, %s, %s, %s)"
+                cursor.executemany(sql, listTemp)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('dataNilai', jenis=jenis, mapel=mapel, kelas=kelas, tgl=tgl, page=1))
+
+        return render_template('guru/tambah_nilai.html', jn=jn, hari=numHari, kls=kls, map=matapel, tgl=tgl, siswa=siswa, hariNilai=hariNilai, jNilai=jNilai, jenis=jenis)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/edit_nilai/<jenis>/<mapel>/<kelas>/<tgl>', methods = ['GET', 'POST'])
+def editNilai(jenis, mapel, kelas, tgl):
+    if verifLogin(2):
+        openDb()
+        global Stat
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil data nilai yang akan diedit
+        sql = "SELECT n.siswa, s.nama, n.nilai FROM nilaihitung n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s AND n.nomor = %s AND n.tanggal = %s"
+        mapelas = (mapel, kelas, jn, tgl)
+        cursor.execute(sql, mapelas)
+        listNilai = cursor.fetchall()
+
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariNilai = cekHari(nhari.isoweekday())
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        if request.method == 'POST':
+            try:
+                jml = request.form['jumlahSiswa']
+                for i in range(1, int(jml) + 1):
+                    nis = request.form['nis' + str(i)]
+                    nilai = float(request.form['nilai' + str(i)])
+                    temp = (nilai, nis, kelas, mapel, jn, tgl)
+                    sql = "UPDATE nilaihitung SET nilai = %s WHERE siswa = %s AND kelas = %s AND mapel = %s AND nomor = %s AND tanggal = %s"
+                    cursor.execute(sql, temp)
+                    conn.commit()
+                Stat = True
+                flash('Data berhasil diubah')
+                closeDb()
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+                closeDb()
+            return redirect(url_for('dataNilai', jenis=jenis, mapel=mapel, kelas=kelas, page=1))
+
+        return render_template('guru/edit_nilai.html', jn=jn, hari=numHari, kls=kls, map=matapel, listNilai=listNilai, jNilai=jNilai, jenis=jenis, hariNilai=hariNilai, tgl=tgl)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/hapus_nilai/<jenis>/<mapel>/<kelas>/<tgl>', methods = ['GET', 'POST'])
+def hapusNilai(jenis, mapel, kelas, tgl):
+    if verifLogin(2):
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        # Data hari/tanggal nilai
+        nhari = datetime.strptime(tgl, "%Y-%m-%d")
+        hariNilai = cekHari(nhari.isoweekday())
+        if request.method == 'POST':
+            try:
+                sql = "DELETE FROM nilaihitung WHERE nomor = %s AND kelas = %s AND mapel = %s AND tanggal = %s"
+                temp = (jn, kls[0], matapel[0], tgl)
+                cursor.execute(sql, temp)
+                conn.commit()
+                Stat = True
+                flash('Data berhasil dihapus')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('dataNilai', jenis=jenis, mapel=mapel, kelas=kelas, page=1))
+
+        return render_template('guru/hapus_nilai.html', jn=jn, hari=numHari, kls=kls, map=matapel, jNilai=jNilai, jenis=jenis, hariNilai=hariNilai, tgl=tgl)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/tambah_nilai_semester/<jenis>/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def tambahNilaiSemester(jenis, mapel, kelas):
+    if verifLogin(2):
+        global Stat
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        # Ambil data murid di kelas tersebut
+        sql = "SELECT r.anggota, s.nama FROM rombel r LEFT JOIN siswa s ON r.anggota = s.nis WHERE r.kelas = %s"
+        cursor.execute(sql, kelas)
+        siswa = cursor.fetchall()
+        if request.method == 'POST':
+            try:
+                jml = request.form['jumlahSiswa']
+                for i in range(1, int(jml) + 1):
+                    nis = request.form['nis' + str(i)]
+                    nilai = float(request.form['nilai' + str(i)])
+                    temp = (nilai, nis, kelas, mapel)
+                    if jenis == "UTS":
+                        sql = "UPDATE nilai SET uts = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                    elif jenis == "UAS":
+                        sql = "UPDATE nilai SET uas = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                    cursor.execute(sql, temp)
+                    conn.commit()
+                Stat = True
+                flash('Data berhasil ditambahkan')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('nilaiSemester', jenis=jenis, mapel=mapel, kelas=kelas))
+
+        return render_template('guru/tambah_nilai.html', jn=jn, hari=numHari, kls=kls, map=matapel, siswa=siswa, jNilai=jNilai, jenis=jenis)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/edit_nilai_semester/<jenis>/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def editNilaiSemester(jenis, mapel, kelas):
+    if verifLogin(2):
+        openDb()
+        global Stat
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data nilai yang akan diedit
+        if jenis == "UTS":
+            sql = "SELECT n.siswa, s.nama, n.uts FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s"
+        elif jenis == "UAS":
+            sql = "SELECT n.siswa, s.nama, n.uas FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.kelas = %s"
+        mapelas = (mapel, kelas)
+        cursor.execute(sql, mapelas)
+        listNilai = cursor.fetchall()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        if request.method == 'POST':
+            try:
+                jml = request.form['jumlahSiswa']
+                for i in range(1, int(jml) + 1):
+                    nis = request.form['nis' + str(i)]
+                    nilai = float(request.form['nilai' + str(i)])
+                    temp = (nilai, nis, kelas, mapel)
+                    if jenis == "UTS":
+                        sql = "UPDATE nilai SET uts = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                    elif jenis == "UAS":
+                        sql = "UPDATE nilai SET uas = %s WHERE siswa = %s AND kelas = %s AND mapel = %s"
+                    cursor.execute(sql, temp)
+                    conn.commit()
+                Stat = True
+                flash('Data berhasil diubah')
+                closeDb()
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+                closeDb()
+            return redirect(url_for('nilaiSemester', jenis=jenis, mapel=mapel, kelas=kelas))
+
+        return render_template('guru/edit_nilai.html', hari=numHari, kls=kls, map=matapel, listNilai=listNilai, jNilai=jNilai, jenis=jenis)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_guru/hapus_nilai_semester/<jenis>/<mapel>/<kelas>', methods = ['GET', 'POST'])
+def hapusNilaiSemester(jenis, mapel, kelas):
+    if verifLogin(2):
+        openDb()
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT kelas, namakelas FROM kelas WHERE kelas = %s"
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil daftar siswa yang akan dihapus nilainya
+        sql = "SELECT siswa FROM nilai WHERE kelas = %s AND mapel = %s"
+        temp = (kelas, mapel)
+        cursor.execute(sql, temp)
+        listSiswa = cursor.fetchall()
+        print(listSiswa[0])
+        print(listSiswa[1])
+
+        # Ambil jumlah nilai yang akan dipilih
+        sql = "SELECT COUNT(*) FROM nilai WHERE kelas = %s AND mapel = %s"
+        temp = (kelas, mapel)
+        cursor.execute(sql, temp)
+        jml = cursor.fetchone()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        if request.method == 'POST':
+            try:
+                for i in listSiswa:
+                    temp = (kls[0], matapel[0], i[0])
+                    if jenis == "UTS":
+                        sql = "UPDATE nilai SET uts = NULL WHERE kelas = %s AND mapel = %s AND siswa = %s"
+                    elif jenis == "UAS":
+                        sql = "UPDATE nilai SET uas = NULL WHERE kelas = %s AND mapel = %s AND siswa = %s"
+                    cursor.execute(sql, temp)
+                    conn.commit()
+                Stat = True
+                flash('Data berhasil dihapus')
+            except Exception as err:
+                Stat = False
+                flash('Terjadi kesalahan')
+                flash(err)
+            closeDb()
+            return redirect(url_for('nilaiSemester', jenis=jenis, mapel=mapel, kelas=kelas))
+
+        return render_template('guru/hapus_nilai.html', jn=jn, hari=numHari, kls=kls, map=matapel, jNilai=jNilai, jenis=jenis)
+    else:
+        return redirect(url_for('index'))
+
+'''
+@app.route('/dashboard_guru/cetak_nilai/<kelas>', methods = ['GET', 'POST'])
+def cetakNilai(kelas):
+    if verifLogin(2):
+
+        return render_template('guru/cetak_nilai.html')
+    else:
+        return redirect(url_for('index'))
+'''
 
 @app.route('/dashboard_guru/jadwal/<id>/<hari>', methods = ['GET', 'POST'])
 def jadwalGuru(id, hari):
@@ -1882,8 +2576,7 @@ def cekAbsenSiswa():
     else:
         return redirect(url_for('index'))
 
-@app.route('/dashboard_siswa/absen/<mapel>', methods = ['GET', 'POST'], defaults = {'page':1})
-@app.route('/dashboard_siswa/absen/<mapel>/<int:page>', methods = ['GET', 'POST'])
+@app.route('/dashboard_siswa/absen/<mapel>', methods = ['GET', 'POST'])
 def absenSiswa(mapel):
     if verifLogin(3):
         openDb()
@@ -1898,24 +2591,159 @@ def absenSiswa(mapel):
         # numHari = hari
         numHari = cekHari(dow)
 
+        # Ambil data siswa yang sedang login
+        sql = "SELECT nama FROM siswa WHERE nis = %s"
+        cursor.execute(sql, session['id'])
+        siswa = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
         # Ambil data kelas dari siswa tersebut
         sql = "SELECT kelas FROM rombel WHERE anggota = %s"
         cursor.execute(sql, session['id'])
         kelas = cursor.fetchone()
 
         # Ambil data absensi dari siswa yang bersangkutan
-        sql = "SELECT tanggal, status FROM presensi WHERE mapel = %s AND siswa = %s"
+        sql = "SELECT WEEKDAY(tanggal), tanggal, status FROM presensi WHERE mapel = %s AND siswa = %s"
         det = (mapel, session['id'])
         cursor.execute(sql, det)
         abs = cursor.fetchall()
 
+        if not abs:
+            abs = False
 
+        # Ambil total kehadiran
+        sql = "SELECT s.status, ifnull(status_count,0) as total FROM statuspresensi s LEFT JOIN (SELECT p.status, count(*) as status_count FROM presensi p WHERE siswa = %s AND mapel = %s AND kelas = %s GROUP BY p.status) as total_status ON s.status = total_status.status ORDER BY FIELD(s.status,'Hadir','Izin','Sakit','Alpha');"
+        temp = (session['id'], mapel, kelas)
+        cursor.execute(sql, temp)
+        res = cursor.fetchall()
+
+        hariAbsen = []
+        for x in range(1, 8):
+            hariAbsen.append(cekHari(x))
 
         closeDb()
-        return render_template('siswa/absensiSiswa.html', absensi=abs, hari=numHari, kelas=kelas)
+        return render_template('siswa/absensiSiswa.html', siswa=siswa, absensi=abs, hari=numHari, kelas=kelas, hariAbsen=hariAbsen, map=matapel, res=res)
     else:
         return redirect(url_for('index'))
 
+@app.route('/dashboard_siswa/cek_nilai/<jenis>', methods = ['GET', 'POST'])
+def cekNilaiSiswa(jenis):
+    if verifLogin(3):
+        openDb()
+        global Stat
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data kelas
+        sql = "SELECT r.kelas, k.namakelas FROM rombel r LEFT JOIN kelas k ON r.kelas = k.kelas WHERE r.anggota = %s"
+        kelas = (session['id'])
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil daftar mapel yang dipelajari selain upacara
+        sql = "SELECT DISTINCT j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.kelas = %s AND NOT EXISTS (SELECT m.kodemapel, m.namamapel FROM mapel m WHERE m.kodemapel = 'UPAC' AND m.kodemapel = j.mapel)"
+        cursor.execute(sql, kls[0])
+        mapels = cursor.fetchall()
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        return render_template('siswa/cekNilaiSiswa.html', jenis=jenis, kls=kls, hari=numHari, mapel=mapels, jNilai=jNilai)
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/dashboard_siswa/nilai/<jenis>/<mapel>', methods = ['GET', 'POST'])
+def nilaiSiswa(jenis, mapel):
+    if verifLogin(3):
+        openDb()
+        global Stat, tipe
+        tanggal = date.today()
+        dow = tanggal.isoweekday()
+        numHari = cekHari(dow)
+
+        # Ambil data siswa yang sedang login
+        sql = "SELECT nama FROM siswa WHERE nis = %s"
+        cursor.execute(sql, session['id'])
+        siswa = cursor.fetchone()
+
+        # Ambil data kelas
+        sql = "SELECT r.kelas, k.namakelas FROM rombel r LEFT JOIN kelas k ON r.kelas = k.kelas WHERE r.anggota = %s"
+        kelas = (session['id'])
+        cursor.execute(sql, kelas)
+        kls = cursor.fetchone()
+
+        # Ambil data mapel
+        sql = "SELECT kodemapel, namamapel FROM mapel WHERE kodemapel = %s"
+        cursor.execute(sql, mapel)
+        matapel = cursor.fetchone()
+
+        # Ambil data kodenilai berdasarkan jenis nilai yang diakses
+        sql = "SELECT kodenilai FROM jenisnilai WHERE namanilai = %s"
+        cursor.execute(sql, jenis)
+        jn = cursor.fetchone()
+
+        # Ambil data nilai yang dipilih
+        avg = False
+        if jn[0] == 1 or jn[0] == 2 or jn[0] == 3:
+            tipe = 1
+            sql = "SELECT WEEKDAY(tanggal), tanggal, nilai FROM nilaihitung WHERE mapel = %s AND siswa = %s AND nomor = %s"
+            mapelas = (matapel[0], session['id'], jn[0])
+            cursor.execute(sql, mapelas)
+            dataNilai = cursor.fetchall()
+            if dataNilai:
+                tempSum = 0
+                tempNum = 0
+                listSum = []
+                for a in dataNilai:
+                    tempSum += a[2]
+                    listSum.append(a[2])
+                    tempNum += 1
+                tempAvg = tempSum / tempNum
+                # Untuk membatasi 2 digit angka desimal
+                avg = f"{tempAvg:.2f}"
+        elif jn[0] == 4 or jn[0] == 5:
+            tipe = 2
+            sql = "SELECT n.siswa, s.nama, n.uts, n.uas FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.siswa = %s"
+            temp = (matapel[0], session['id'])
+            cursor.execute(sql, temp)
+            dataNilai = cursor.fetchall()
+        elif jn[0] == 6:
+            tipe = 3
+            sql = "SELECT n.siswa, s.nama, n.pengetahuan, n.keterampilan FROM nilai n LEFT JOIN siswa s ON n.siswa = s.nis WHERE n.mapel = %s AND n.siswa = %s"
+            temp = (matapel[0], session['id'])
+            cursor.execute(sql, temp)
+            dataNilai = cursor.fetchall()
+        else:
+            dataNilai = []
+
+        hariNilai = []
+        for x in range(1, 8):
+            hariNilai.append(cekHari(x))
+
+        if not dataNilai:
+            dataNilai = False
+
+        # Ambil daftar jenis nilai
+        sql = "SELECT namanilai from jenisnilai ORDER BY kodenilai ASC"
+        cursor.execute(sql)
+        temp = cursor.fetchall()
+        jNilai = []
+        for x in temp:
+            jNilai.append(x[0])
+
+        return render_template('siswa/nilaiSiswa.html', siswa=siswa, jenis=jenis, hariNilai=hariNilai, kls=kls, map=matapel, hari=numHari, jNilai=jNilai, dataNilai=dataNilai, tipe=tipe, avg=avg)
+    else:
+        return redirect(url_for('index'))
 @app.route('/dashboard_siswa/jadwal/<kelas>/<hari>', methods = ['GET','POST'])
 def jadwalSiswa(kelas, hari):
     if verifLogin(3):
@@ -2267,11 +3095,38 @@ def tambahpeminjaman():
 def cetakpeminjaman():
     if verifLogin(4):
         openDb()
+        global lanjut, Stat
+        # Ambil daftar peminjaman dari database
+        sql = "SELECT p.idpeminjaman, s.nama, b.isbn, p.tanggalpinjam FROM peminjamanbuku p LEFT JOIN kelas k ON p.kelas = k.kelas LEFT JOIN databuku b ON p.nomorbuku = b.isbn LEFT JOIN siswa s ON p.peminjam = s.nis ORDER BY p.idpeminjaman"
+        cursor.execute(sql)
+        peminjamanAll = cursor.fetchall()
 
+        # Jika databasenya kosong
+        if not peminjamanAll:
+            peminjamanAll = False
+        else:
+            res = []
+            sql = "SELECT count(idpeminjaman) FROM peminjamanbuku WHERE statuspinjam = 'Dipinjam'"
+            cursor.execute(sql)
+            pinjam = cursor.fetchall()
+            res.append(pinjam[0])
+            sql = "SELECT count(idpeminjaman) FROM peminjamanbuku WHERE statuspinjam = 'Dikembalikan'"
+            cursor.execute(sql)
+            kembali = cursor.fetchall()
+            res.append(kembali[0])
+            sql = "SELECT count(idpeminjaman) FROM peminjamanbuku WHERE statuspinjam = 'Rusak'"
+            cursor.execute(sql)
+            rsk = cursor.fetchall()
+            res.append(rsk[0])
+            sql = "SELECT count(idpeminjaman) FROM peminjamanbuku WHERE statuspinjam = 'Hilang'"
+            cursor.execute(sql)
+            hlg = cursor.fetchall()
+            res.append(hlg[0])
         closeDb()
-        return render_template('perpus/cetak_pinjam.html')
+        return render_template('perpus/cetak_pinjam.html', peminjaman=peminjamanAll, res=res)
     else:
-        return redirect(url_for('index'))
+        return redirect(url_for('index'))     
+
 
 if __name__ == '__main__':
     app.run(debug=True)
