@@ -1,4 +1,3 @@
-# File utama program ini
 from flask import Flask, flash, session, render_template,\
     request, redirect, url_for
 from flask_session import Session
@@ -59,7 +58,11 @@ def verifLogin(a):
 #Penamaan hari berdasarkan angka
 def cekHari(dow):
     nmHr = ("","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu")
-    return nmHr[dow];
+    return nmHr[dow]
+
+def cekHariR(hari):
+    nmHr = ("","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu")
+    return nmHr.index(hari)
 
 #Penamaan bulan berdasarkan angka
 def cekBulan(mm):
@@ -168,7 +171,7 @@ def admin():
 def dataguru(page):
     if verifLogin(1):
         openDb()
-        global lanjut, Stat
+        global Stat
         lanjut = True
         pencarian = ""
         prev = page-1
@@ -303,7 +306,6 @@ def tambahguru():
                 nama = request.form['nama']
                 # Username = nama tanpa spasi ataupun simbol, hanya alphanumeric
                 username = ''.join(nama.split()).lower()
-                print(username)
                 jk = request.form.get('gender')
                 ag = request.form.get('agama')
                 em = request.form['email']
@@ -334,7 +336,8 @@ def tambahguru():
 def datasiswa(page):
     if verifLogin(1):
         openDb()
-        global lanjut, Stat
+        global Stat
+        lanjut = True
         prev = page - 1
         next = page + 1
         counter = prev*10
@@ -590,7 +593,8 @@ def formupload(tipe):
 def datakelas(page):
     if verifLogin(1):
         openDb()
-        global Stat, lanjut
+        global Stat
+        lanjut = True
         prev = page - 1
         next = page + 1
         counter = prev * 10
@@ -723,7 +727,8 @@ def tambahkelas():
 def datarombel(kode, page):
     if verifLogin(1):
         openDb()
-        global Stat, lanjut
+        global Stat
+        lanjut = True
         prev = page - 1
         next = page + 1
         counter=prev*10
@@ -1014,7 +1019,8 @@ def hapusjadwal(kode, hari, jam):
 def datamapel(page):
     if verifLogin(1):
         openDb()
-        global Stat, lanjut
+        global Stat
+        lanjut = True
         pencarian = ""
         prev = page - 1
         next = page + 1
@@ -1351,7 +1357,7 @@ def cekAbsensi():
         kls = cursor.fetchall()
 
         # Ambil daftar mapel yang diajar
-        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
+        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s AND NOT EXISTS (SELECT m.kodemapel, m.namamapel FROM mapel m WHERE m.kodemapel = 'UPAC' AND m.kodemapel = j.mapel)"
         cursor.execute(sql, session['id'])
         mapel = cursor.fetchall()
         # Jika guru tidak memiliki kelas & mapel yang diajar
@@ -1550,10 +1556,19 @@ def absensiBaru():
                 kls = request.form.get('kelas')
                 mpl = request.form.get('mapel')
                 tgl = request.form.get('tanggal')
+                sql = "SELECT DISTINCT hari FROM jadwal WHERE kelas = %s AND mapel = %s AND pengajar = %s"
+                temp = (kls, mpl, session['id'])
+                cursor.execute(sql, temp)
+                hariAbsensi = cursor.fetchone()
                 # Jika tanggal yang dipilih adalah hari sabtu atau minggu
                 if datetime.strptime(tgl, '%Y-%m-%d').isoweekday() == 6 or datetime.strptime(tgl, '%Y-%m-%d').isoweekday() == 7:
                     Stat = False
                     flash('Tidak dapat menambah absensi di luar hari belajar')
+                    return redirect(url_for('absensiBaru'))
+                # Jika tanggal yang dipilih adalah hari di luar jadwal yang sudah ada
+                elif datetime.strptime(tgl, '%Y-%m-%d').isoweekday() != cekHariR(hariAbsensi[0]):
+                    Stat = False
+                    flash('Tanggal tidak sesuai dengan jadwal mata pelajaran yang ada')
                     return redirect(url_for('absensiBaru'))
                 closeDb()
                 return redirect(url_for('tambahAbsensi', kelas=kls, mapel=mpl, tgl=tgl))
@@ -1627,8 +1642,8 @@ def cekNilai(jenis):
         cursor.execute(sql, session['id'])
         kls = cursor.fetchall()
 
-        # Ambil daftar mapel yang diajar
-        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s"
+        # Ambil daftar mapel yang diajar kecuali upacara
+        sql = "SELECT DISTINCT j.kelas, j.mapel, m.namamapel FROM jadwal j LEFT JOIN mapel m ON j.mapel = m.kodemapel WHERE j.pengajar = %s AND NOT EXISTS (SELECT m.kodemapel, m.namamapel FROM mapel m WHERE m.kodemapel = 'UPAC' AND m.kodemapel = j.mapel)"
         cursor.execute(sql, session['id'])
         mapel = cursor.fetchall()
 
@@ -2077,6 +2092,10 @@ def nilaiBaru(jenis, mapel, kelas):
                 jn = int(request.form.get('jenis'))
                 cls = request.form.get('kelas')
                 mpl = request.form.get('mapel')
+                sql = "SELECT DISTINCT hari FROM jadwal WHERE kelas = %s AND mapel = %s AND pengajar = %s"
+                temp = (cls, mpl, session['id'])
+                cursor.execute(sql, temp)
+                hariBelajar = cursor.fetchone()
                 if jn == 1 or jn == 2 or jn == 3:
                     tgl = request.form.get('tanggal')
                     # Jika tanggal yang dipilih adalah hari sabtu atau minggu
@@ -2084,6 +2103,12 @@ def nilaiBaru(jenis, mapel, kelas):
                         Stat = False
                         flash('Tidak dapat menambah nilai di luar hari belajar')
                         return redirect(url_for('nilaiBaru', jenis=jenis, kelas=kelas, mapel=mapel))
+                    # Jika tanggal yang dipilih adalah hari di luar jadwal yang sudah ada
+                    elif datetime.strptime(tgl, '%Y-%m-%d').isoweekday() != cekHariR(hariBelajar[0]):
+                        Stat = False
+                        flash('Tanggal tidak sesuai dengan jadwal mata pelajaran yang ada')
+                        return redirect(url_for('nilaiBaru', jenis=jenis, kelas=kelas, mapel=mapel))
+                    closeDb()
                     return redirect(url_for('tambahNilai', jenis=jenis, kelas=cls, mapel=mpl, tgl=tgl))
                 elif jn == 4 or jn == 5:
                     return redirect(url_for('tambahNilaiSemester', jenis=jenis, kelas=cls, mapel=mpl))
@@ -3126,7 +3151,6 @@ def cetakpeminjaman():
         return render_template('perpus/cetak_pinjam.html', peminjaman=peminjamanAll, res=res)
     else:
         return redirect(url_for('index'))     
-
 
 if __name__ == '__main__':
     app.run(debug=True)
