@@ -78,12 +78,19 @@
                               </div>
                               <div class="form-group">
                                   <label>Judul Buku</label>
-                                  <select class="form-control" name="buku" id="buku" required>
-                                      <option selected value="">Pilih Buku</option>
-                                  {% for x in buku %}
-                                        <option value="{{ x[0] }}">{{ x[1] }}</option>
-                                  {% endfor %}
-                                  </select>
+                                  <input type="text" class="form-control" id="searchInput" placeholder="Cari Buku Di sini">
+                                  <div class="dropdown mt-2">
+                                      <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                          Pilih Buku
+                                      </button>
+                                      <input type="hidden" id="buku" name="buku">
+                                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="optionsList">
+                                          {% for x in buku %}
+                                          <a class="dropdown-item" href="#">{{ x[1] }}</a>
+                                          {% endfor %}
+                                      </div>
+                                  </div>
                               </div>
                               <div class="form-group">
                                   <label>Tanggal Pinjam</label>

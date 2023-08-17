@@ -6,3 +6,24 @@
  */
 
 "use strict";
+$(document).ready(function() {
+    // Fungsi search judul buku
+    $('#searchInput').on('input', function() {
+        const searchValue = $(this).val().toLowerCase();
+        $('.dropdown-item').each(function() {
+            const text = $(this).text().toLowerCase();
+            if (text.includes(searchValue)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // Mengambil nilai dari opsi dropdown yang dipilih
+    $('.dropdown-item').click(function() {
+        const selectedOption = $(this).text();
+        $('#buku').val(selectedOption);
+        $('.btn.dropdown-toggle').text(selectedOption);
+    });
+});

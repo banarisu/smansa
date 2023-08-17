@@ -3097,11 +3097,15 @@ def tambahpeminjaman():
         if request.method == 'POST':
             try:
                 peminjam = request.form.get('peminjam')
-                buku = request.form.get('buku')
+                judulbuku = request.form.get('buku')
+                sql = "SELECT isbn FROM databuku WHERE namabuku = %s"
+                cursor.execute(sql, judulbuku)
+                buku = cursor.fetchone()
+
                 cursor.execute('SELECT kelas from rombel WHERE anggota = %s', peminjam)
                 kls = cursor.fetchone()
                 tanggal = request.form['tanggalpinjam']
-                detail = (peminjam, kls[0], buku, tanggal, 'Dipinjam')
+                detail = (peminjam, kls[0], buku[0], tanggal, 'Dipinjam')
                 cursor.execute('INSERT INTO peminjamanbuku VALUES (NULL, %s, %s, %s, %s, %s, NULL)', detail)
                 conn.commit()
                 Stat = True
