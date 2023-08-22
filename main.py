@@ -2498,15 +2498,6 @@ def hapusNilaiSemester(jenis, mapel, kelas):
     else:
         return redirect(url_for('index'))
 
-'''
-@app.route('/dashboard_guru/cetak_nilai/<kelas>', methods = ['GET', 'POST'])
-def cetakNilai(kelas):
-    if verifLogin(2):
-
-        return render_template('guru/cetak_nilai.html')
-    else:
-        return redirect(url_for('index'))
-'''
 
 @app.route('/dashboard_guru/jadwal/<id>/<hari>', methods = ['GET', 'POST'])
 def jadwalGuru(id, hari):
